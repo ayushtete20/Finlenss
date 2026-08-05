@@ -61,4 +61,7 @@ backend/*.sqlite-journal
 *.sw?
 Screenshot*.png
 *.png.bak
+*tabase.txt
+*.txt.bak
+
 
