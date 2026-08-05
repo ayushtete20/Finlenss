@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #EAF2F8;
+    color: #0D47A1;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+.mint-card {
+  background-color: #FFFFFF;
+  border: 1px solid #90CAF9;
+  box-shadow: 0 4px 20px -4px rgba(13, 71, 161, 0.08);
+  border-radius: 0.75rem;
+  transition: all 0.25s ease-in-out;
+}
+
+.mint-card:hover {
+  border-color: #2196F3;
+  box-shadow: 0 10px 30px -5px rgba(13, 71, 161, 0.16);
+  transform: translateY(-2px);
+}
+
+.mint-badge {
+  display: inline-block;
+  border: 1px solid #90CAF9;
+  background-color: #E3F2FD;
+  color: #0D47A1;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #E3F2FD;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #90CAF9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0D47A1;
+}

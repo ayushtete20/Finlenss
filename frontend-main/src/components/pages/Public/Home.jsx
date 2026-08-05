@@ -1,0 +1,226 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { fetchArticles, fetchCategories } from '../../../services/api';
+import ClayCard from '../../UI/ClayCard';
+import { ArrowUpRight, TrendingUp, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
+
+export const Home = ({ searchTerm, setSearchTerm }) => {
+  const [articles, setArticles] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [categories, setCategories] = useState(['All']);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const loadCategories = async () => {
+    try {
+      const data = await fetchCategories();
+      if (data && data.categories && data.categories.length > 0) {
+        const names = data.categories.map(c => c.name);
+        setCategories(['All', ...names]);
+      } else {
+        setCategories(['All', 'Stocks', 'Cryptocurrency', 'Macroeconomics', 'Wealth Management', 'DeFi 3.0']);
+      }
+    } catch (err) {
+      setCategories(['All', 'Stocks', 'Cryptocurrency', 'Macroeconomics', 'Wealth Management', 'DeFi 3.0']);
+    }
+  };
+
+  const loadArticles = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchArticles({
+        category: selectedCategory,
+        search: searchTerm
+      });
+      setArticles(data.articles || []);
+    } catch (err) {
+      setError('Unable to load financial insights from server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    loadArticles();
+  }, [selectedCategory, searchTerm]);
+
+  // Sort articles for trending sidebar: owner-pinned first, then highest views
+  const sortedByTrending = [...articles].sort((a, b) => {
+    if ((b.is_trending || 0) !== (a.is_trending || 0)) {
+      return (b.is_trending || 0) - (a.is_trending || 0);
+    }
+    return (b.views || 0) - (a.views || 0);
+  });
+
+  const featuredArticle = articles.length > 0 ? articles[0] : null;
+  const trendingArticles = sortedByTrending.slice(0, 4);
+
+  return (
+    <div className="space-y-16 py-4">
+      {/* Superdesign Draft Hero Grid Section */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Hero Card - Featured Selection */}
+        <div className="lg:col-span-8">
+          {featuredArticle ? (
+            <div className="bg-[#0D47A1] text-white border border-[#90CAF9] shadow-xl rounded-2xl p-8 sm:p-12 relative overflow-hidden flex flex-col justify-between min-h-[460px]">
+              <div>
+                <span className="px-3.5 py-1 text-xs font-extrabold rounded-md bg-[#2196F3] text-white uppercase tracking-widest inline-block mb-6 shadow-sm">
+                  FEATURED SELECTION
+                </span>
+
+                <h1 className="text-xl sm:text-3xl font-extrabold text-white font-serif leading-[1.15] mb-6">
+                  <Link to={`/post/${featuredArticle.id}`} className="hover:text-[#90CAF9] transition-colors">
+                    {featuredArticle.title}
+                  </Link>
+                </h1>
+
+                <p className="text-sm sm:text-base text-slate-100/90 leading-relaxed max-w-2xl font-sans mb-8">
+                  {featuredArticle.excerpt || 'Diving deep into the psychology of modern investing and why emotional intelligence is your highest ROI in 2026.'}
+                </p>
+              </div>
+
+              {/* Author Footer */}
+              <div className="flex items-center gap-3 pt-6 border-t border-[#90CAF9]/40">
+                <div className="w-10 h-10 rounded-full bg-white text-[#0D47A1] flex items-center justify-center font-bold text-sm uppercase shadow-sm">
+                  {featuredArticle.author ? featuredArticle.author.charAt(0) : 'T'}
+                </div>
+                <div>
+                  <span className="block text-sm font-bold text-white">
+                    {featuredArticle.author || 'Tushar Singh'}
+                  </span>
+                  <span className="block text-[10px] uppercase font-bold tracking-widest text-slate-200/80">
+                    LEAD ANALYST • {featuredArticle.read_time || '8 MIN READ'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-[#0D47A1] text-white p-12 text-center rounded-2xl">
+              Loading featured selection...
+            </div>
+          )}
+        </div>
+
+        {/* Right Sidebar - Trending */}
+        <div className="lg:col-span-4 space-y-6 pt-2">
+          <div className="bg-[#0D47A1] text-white p-6 rounded-2xl border border-[#90CAF9] shadow-lg space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white bg-[#2196F3] px-4 py-1.5 rounded-lg shadow-sm font-serif inline-flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" /> Trending .
+              </h2>
+              <span className="text-[10px] uppercase tracking-wider text-slate-200 font-bold bg-[#2196F3]/30 px-2 py-1 rounded">
+                Live Views
+              </span>
+            </div>
+
+            <div className="space-y-5">
+              {trendingArticles.length > 0 ? (
+                trendingArticles.map((art, idx) => (
+                  <div key={art.id} className="space-y-1 group border-b border-[#90CAF9]/30 pb-4 last:border-none last:pb-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-[#90CAF9] uppercase tracking-widest">
+                        0{idx + 1}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {art.is_trending ? (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-extrabold bg-amber-400 text-slate-950 px-2 py-0.5 rounded shadow-sm uppercase tracking-wider">
+                            <Sparkles className="w-3 h-3 fill-slate-950" /> Pinned
+                          </span>
+                        ) : null}
+                        <span className="text-[10px] font-semibold text-slate-200 bg-white/10 px-2 py-0.5 rounded">
+                          {art.views || 0} visits
+                        </span>
+                      </div>
+                    </div>
+                    <h4 className="text-sm font-semibold text-white group-hover:text-[#90CAF9] transition-colors line-clamp-2">
+                      <Link to={`/post/${art.id}`}>
+                        {art.title}
+                      </Link>
+                    </h4>
+                  </div>
+                ))
+              ) : (
+                <>
+                  <div className="space-y-1 border-b border-[#90CAF9]/30 pb-3">
+                    <span className="text-xs font-bold text-[#90CAF9] uppercase tracking-widest">01</span>
+                    <h4 className="text-sm font-semibold text-white">The rise of decentralized credit unions in 2026.</h4>
+                  </div>
+                  <div className="space-y-1 border-b border-[#90CAF9]/30 pb-3">
+                    <span className="text-xs font-bold text-[#90CAF9] uppercase tracking-widest">02</span>
+                    <h4 className="text-sm font-semibold text-white">SaaS burnout: How micro-investing changed the landscape.</h4>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-[#90CAF9] uppercase tracking-widest">03</span>
+                    <h4 className="text-sm font-semibold text-white">Why 4% is no longer the magic number for retirement.</h4>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Latest Insights Section */}
+      <section className="space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#0D47A1]/10 pb-4">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white bg-[#0D47A1] px-6 py-2.5 rounded-xl shadow-md font-serif inline-block">
+              Latest Insights
+            </h2>
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
+            {categories.map((cat) => {
+              const active = selectedCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded border transition-all ${
+                    active
+                      ? 'bg-[#0D47A1] text-white border-[#0D47A1] shadow-sm'
+                      : 'border-[#0D47A1]/20 text-[#0D47A1] hover:border-[#0D47A1]/50 bg-white/40'
+                  }`}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="py-20 text-center space-y-3">
+            <RefreshCw className="w-8 h-8 text-navy-900 animate-spin mx-auto" />
+            <p className="text-xs font-bold text-navy-900/60 uppercase tracking-wider">Fetching live insights...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {!loading && error && (
+          <div className="p-6 rounded border border-rose-600/30 bg-rose-50 text-rose-900 text-xs">
+            {error}
+          </div>
+        )}
+
+        {/* Card Grid */}
+        {!loading && !error && articles.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {articles.map((article) => (
+              <ClayCard key={article.id} article={article} />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+};
+
+export default Home;
