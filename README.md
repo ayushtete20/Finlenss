@@ -1,91 +1,191 @@
-# 📈 Financial Insights Blog Platform & Advisor Portfolio
+# 📈 MINT Financial Blog & Executive Advisory Platform
 
-A full-stack, monorepo financial blog platform featuring a centralized Express.js REST API with SQLite database, a main blog application with an Admin Management Dashboard built with React, Vite, Tailwind CSS, and Seafoam & Navy Claymorphic design tokens, and a dedicated subdomain portfolio application.
+[![React](https://img.shields.io/badge/React-18.3-blue.svg?logo=react)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6.0-646CFF.svg?logo=vite)](https://vitejs.dev/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E.svg?logo=supabase)](https://supabase.com/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC.svg?logo=tailwindcss)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
----
-
-## 🏗️ Monorepo Structure
-
-```
-financial-blog-platform/
-├── backend/                  # Express.js REST API & SQLite Database
-│   ├── database.sqlite       # Local persistent SQLite database
-│   ├── src/
-│   │   ├── config/           # Database configuration & seeding (db.js)
-│   │   ├── controllers/      # Article & Auth controllers
-│   │   ├── middleware/       # JWT admin authentication guard
-│   │   ├── routes/           # REST endpoints (/api/blogs, /api/admin)
-│   │   └── server.js         # Main Express entry point (Port 5000)
-│   └── package.json
-│
-├── frontend-main/            # React + Vite + Tailwind CSS (Main Blog & Admin)
-│   ├── .superdesign/         # Design tokens & draft assets
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── UI/           # ClayCard, ClayButton, Header, Footer
-│   │   │   └── pages/
-│   │   │       ├── Public/   # Home.jsx (Staggered masonry grid), Post.jsx
-│   │   │       └── Admin/    # Login.jsx, Dashboard.jsx, Editor.jsx
-│   │   ├── services/         # API service layer (api.js)
-│   │   ├── App.jsx           # React Router DOM configuration
-│   │   └── main.jsx
-│   ├── tailwind.config.js    # Seafoam, Navy, and Claymorphic shadow tokens
-│   └── package.json
-│
-└── frontend-portfolio/       # React + Vite + Tailwind CSS (Subdomain Portfolio)
-    ├── src/
-    │   ├── components/       # Hero, Services, Stats, Contact
-    │   ├── pages/            # Index.jsx
-    │   ├── App.jsx
-    │   └── main.jsx
-    ├── tailwind.config.js
-    └── package.json
-```
+An institutional-grade **Financial Insights Blog & Legal Advisory Portfolio** web ecosystem powered by **React (Vite)**, **Supabase (PostgreSQL & Storage)**, **TailwindCSS**, and **HTML5 3D Canvas** chart graphics.
 
 ---
 
-## ⚡ Quick Start Guide
+## 🌟 Key Features
 
-### 1. Start the Backend API Server
-```bash
-cd backend
-npm install
-npm start
+### 📰 1. Main Blog Platform (`frontend-main` - Port 5173)
+- **Institutional Market Insights**: Real-time category filtering across *Stocks*, *Macroeconomics*, *Cryptocurrency*, *Wealth Management*, and *DeFi 3.0*.
+- **Featured Selection & Pinned Articles**: Owner-pinned primary financial valuation models with live view counters.
+- **Owner & Admin Management Portal (`/admin/dashboard`)**:
+  - **Article Operations**: Publish, edit, delete markdown articles, manage dynamic categories, and toggle trending pins.
+  - **Consultation Lead Reservations**: Manage prospective client advisory requests (`Pending`, `Contacted`, `Completed`).
+  - **Licenses & Certifications Manager**: Add accredited credentials, link case study articles, and attach Excel financial models or PDF certificates.
+- **Supabase Cloud Initializer (`/admin/seed`)**: Protected database initialization panel with one-click cloud seeding for the **Dabur 3-Statement Financial Model**.
+
+### 💼 2. Legal & Financial Advisor Portfolio (`frontend-portfolio` - Port 5174)
+- **3D Financial Canvas (`FinancialBackground.jsx`)**: Real-time HTML5 3D candlestick and financial wave chart background animation.
+- **Verified Credentials & Case Studies**: Accredited certifications grid featuring dynamic Supabase data fetching.
+- **Supabase Storage Download Engine**: Asynchronous public URL generator for downloading 3-Statement Excel models (`Dabur_Model.xlsx`).
+- **Executive Consultation Modal**: Online advisory reservation form submitting leads directly to Supabase PostgreSQL.
+
+---
+
+## 🏗️ System Architecture
+
 ```
-> Server will listen on **`http://localhost:5000`** and auto-seed initial financial articles into `database.sqlite`.
+                               ┌─────────────────────────────────────────────────────────┐
+                               │                      CLIENT LAYER                       │
+                               └────────────────────────────┬────────────────────────────┘
+                                                            │
+                      ┌─────────────────────────────────────┴─────────────────────────────────────┐
+                      ▼                                                                           ▼
+        ┌───────────────────────────┐                                               ┌───────────────────────────┐
+        │    Main Blog Platform     │                                               │     Advisor Portfolio     │
+        │  (frontend-main - :5173)   │                                               │(frontend-portfolio - :5174)│
+        └─────────────┬─────────────┘                                               └─────────────┬─────────────┘
+                      │                                                                           │
+                      ├─────────────────────────────────────┬─────────────────────────────────────┤
+                      │                                     │                                     │
+                      ▼ Direct Supabase SDK                 ▼ REST APIs / Fallback                ▼ Direct Supabase SDK
+       ┌──────────────────────────────┐              ┌──────────────────────────────┐              ┌──────────────────────────────┐
+       │     Supabase PostgreSQL      │              │      Express.js Backend      │              │       Supabase Storage       │
+       │    (Cloud DB & Tables)       │              │       (Node.js - :5000)      │              │   (Bucket: financial-models) │
+       └──────────────────────────────┘              └──────────────┬───────────────┘              └──────────────────────────────┘
+                                                                    │
+                                                                    ▼
+                                                             ┌──────────────┐
+                                                             │ SQLite Local │
+                                                             └──────────────┘
+```
 
-### 2. Start the Main Blog & Admin Dashboard (`frontend-main`)
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend Core**: React 18, Vite 6, React Router DOM 7
+- **Database & Storage**: Supabase (PostgreSQL), `@supabase/supabase-js`, Supabase Storage Buckets
+- **Styling & Icons**: TailwindCSS 3 (Dark `#0A0F1D`, Card `#111827`), Lucide React
+- **Typography**: `Plus Jakarta Sans` (Body text), `Outfit` (Display headings)
+- **Animations**: Framer Motion 12, HTML5 Canvas 3D Graphics
+- **Backend (Fallback)**: Node.js, Express.js 4, SQLite3, Multer, JWT
+
+---
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+- **Node.js**: v18.0.0 or higher
+- **npm**: v9.0.0 or higher
+
+### 1. Clone the Repository
 ```bash
+git clone https://github.com/YOUR_USERNAME/financial-blog-platform.git
+cd financial-blog-platform
+```
+
+### 2. Install Dependencies
+
+```bash
+# Install Main Blog dependencies
 cd frontend-main
 npm install
-npm run dev
-```
-> Application will run on **`http://localhost:5173`**.
 
-### 3. Start the Portfolio Subdomain (`frontend-portfolio`)
-```bash
-cd frontend-portfolio
+# Install Portfolio dependencies
+cd ../frontend-portfolio
 npm install
+
+# Install Backend dependencies
+cd ../backend
+npm install
+```
+
+---
+
+## 🔑 Environment Variables Setup
+
+Create a `.env` file in both `frontend-main` and `frontend-portfolio` directories (refer to `.env.example`):
+
+```env
+# frontend-main/.env & frontend-portfolio/.env
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_public_key_here
+```
+
+---
+
+## 🏃 Running the Application
+
+Run the dev servers simultaneously from separate terminal windows:
+
+```bash
+# Terminal 1: Start Main Blog Platform (:5173)
+cd frontend-main
+npm run dev
+
+# Terminal 2: Start Advisor Portfolio (:5174)
+cd frontend-portfolio
+npm run dev
+
+# Terminal 3 (Optional): Start Express API Server (:5000)
+cd backend
 npm run dev
 ```
-> Portfolio site will run on **`http://localhost:5174`**.
+
+### Access Ports:
+- 📰 **Main Blog**: [http://localhost:5173](http://localhost:5173)
+- 🔐 **Admin Portal**: [http://localhost:5173/admin/login](http://localhost:5173/admin/login)
+- ⚡ **Supabase Seed Tool**: [http://localhost:5173/admin/seed](http://localhost:5173/admin/seed)
+- 💼 **Advisor Portfolio**: [http://localhost:5174](http://localhost:5174)
 
 ---
 
-## 🔑 Admin Portal Access
+## ⚡ Supabase Data Initialization
 
-- **Login URL**: `http://localhost:5173/admin/login`
-- **Default Password**: `admin123`
-
-### Features:
-- **Authentication**: Password login issuing JWT session token.
-- **Operations Dashboard**: Data table displaying all articles, search filter, reader metrics, and deletion confirmation modal.
-- **Content Editor**: Form interface to publish or edit articles, category selector, thumbnail image URL input with presets, and tabbed **Live Markdown Preview**.
+1. Navigate to the protected seed panel: **[http://localhost:5173/admin/seed](http://localhost:5173/admin/seed)**
+2. Review the database initialization alert.
+3. Click **"Initialize Dabur Database"** to automatically push the 3-Statement Financial Model JSON and certification data to your Supabase PostgreSQL cloud database.
 
 ---
 
-## 🎨 Theme & Aesthetic Tokens
+## 📂 Project Structure
 
-- **Seafoam Accent Palette**: `#2DD4BF`, `#14B8A6`, `#0D9488`, `#E6FFFA`
-- **Deep Navy Palette**: `#070A13`, `#0B132B`, `#0F172A`, `#1E293B`
-- **Claymorphic 3D Elevation**: Custom dual soft box-shadows (`shadow-clay`, `shadow-clay-seafoam`, `clay-card-base`, `clay-button-base`).
+```
+d:\Tushar\financial-blog-platform\
+├── backend/                              # Node.js Express REST API server
+│   ├── src/
+│   │   ├── config/db.js                  # SQLite fallback database initialization
+│   │   ├── controllers/                  # Articles, auth, credentials, & lead controllers
+│   │   └── routes/                       # Express route definitions
+│   └── uploads/                          # Local asset uploads folder
+│
+├── frontend-main/                        # Main Blog & Insights Web App (:5173)
+│   ├── .env                              # Supabase project URL & ANON key
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── pages/Admin/              # AdminSeedPanel, Dashboard, Editor, Login
+│   │   │   ├── pages/Public/             # Home, Post detail view
+│   │   │   └── UI/                       # ClayCard, ClayButton, Header, Footer
+│   │   ├── services/api.js               # Supabase direct queries & API service wrapper
+│   │   └── utils/supabaseClient.js       # Central Supabase SDK client utility
+│   └── tailwind.config.js                # Theme colors (#0A0F1D, #111827) & fonts
+│
+└── frontend-portfolio/                   # Advisor Portfolio App (:5174)
+    ├── .env                              # Supabase project URL & ANON key
+    └── src/
+        ├── components/                   # Certifications, Contact, ShowcaseGrid, Hero
+        └── utils/supabaseClient.js       # Central Supabase SDK client utility
+```
+
+---
+
+## 🔒 Security & Best Practices
+
+- **Private Secrets**: Real Supabase keys `.env` files are excluded from Git via `.gitignore`.
+- **MIME & Extension Security**: File uploader validates allowed document formats (`.xlsx`, `.xls`, `.csv`, `.pdf`, `.png`, `.jpg`, `.docx`). Executables are rejected.
+- **Strict Controls**: Mutation endpoints require valid authentication tokens.
+
+---
+
+## 📄 License & Author
+
+- **Author**: Tushar Singh
+- **License**: [MIT License](LICENSE)
