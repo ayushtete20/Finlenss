@@ -1,4 +1,4 @@
-# 📈 MINT Financial Blog & Executive Advisory Platform
+# 📈 Finlenss. Financial Blog & Executive Advisory Platform
 
 [![React](https://img.shields.io/badge/React-18.3-blue.svg?logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6.0-646CFF.svg?logo=vite)](https://vitejs.dev/)
@@ -6,26 +6,33 @@
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC.svg?logo=tailwindcss)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-An institutional-grade **Financial Insights Blog & Legal Advisory Portfolio** web ecosystem powered by **React (Vite)**, **Supabase (PostgreSQL & Storage)**, **TailwindCSS**, and **HTML5 3D Canvas** chart graphics.
+An institutional-grade **Financial Insights Blog & Legal Advisory Portfolio** web ecosystem powered by **React (Vite)**, **Supabase (PostgreSQL, Storage, & Realtime)**, **TailwindCSS**, and **HTML5 3D Canvas** chart graphics.
 
 ---
 
 ## 🌟 Key Features
 
 ### 📰 1. Main Blog Platform (`frontend-main` - Port 5173)
-- **Institutional Market Insights**: Real-time category filtering across *Stocks*, *Macroeconomics*, *Cryptocurrency*, *Wealth Management*, and *DeFi 3.0*.
-- **Featured Selection & Pinned Articles**: Owner-pinned primary financial valuation models with live view counters.
-- **Owner & Admin Management Portal (`/admin/dashboard`)**:
-  - **Article Operations**: Publish, edit, delete markdown articles, manage dynamic categories, and toggle trending pins.
-  - **Consultation Lead Reservations**: Manage prospective client advisory requests (`Pending`, `Contacted`, `Completed`).
-  - **Licenses & Certifications Manager**: Add accredited credentials, link case study articles, and attach Excel financial models or PDF certificates.
-- **Supabase Cloud Initializer (`/admin/seed`)**: Protected database initialization panel with one-click cloud seeding for the **Dabur 3-Statement Financial Model**.
+* **Institutional Market Insights**: Real-time category filtering across *Stocks*, *Macroeconomics*, *Cryptocurrency*, *Wealth Management*, and *DeFi 3.0*.
+* **Realtime Live Refresh**: Powered by **Supabase Realtime** — all sections (Featured, Trending, and Latest Insights) auto-refresh instantly when new articles are created, updated, or deleted. Shows a ⚡ *Live Updated* badge on updates.
+* **Capped Latest Insights**: Capped to display exactly the **6 latest blog posts** so the UI remains clean and premium, automatically rolling over when new posts are published.
+* **Owner & Admin Management Portal (`/admin/dashboard`)**:
+  * **Article Operations**: Publish, edit, delete markdown articles, manage dynamic categories, and toggle trending pins.
+  * **Consultation Lead Reservations**: Manage prospective client advisory requests (`Pending`, `Contacted`, `Completed`).
+  * **Licenses & Certifications Manager**: Add accredited credentials, link case study articles, and attach Excel financial models or PDF certificates.
+* **Direct Server Asset Upload**: File upload system prioritizes direct upload to the local Express backend server with instant image previews inside the admin upload modal.
+* **Supabase Cloud Initializer (`/admin/seed`)**: Protected database initialization panel with one-click cloud seeding for the **Dabur 3-Statement Financial Model**.
 
 ### 💼 2. Legal & Financial Advisor Portfolio (`frontend-portfolio` - Port 5174)
-- **3D Financial Canvas (`FinancialBackground.jsx`)**: Real-time HTML5 3D candlestick and financial wave chart background animation.
-- **Verified Credentials & Case Studies**: Accredited certifications grid featuring dynamic Supabase data fetching.
-- **Supabase Storage Download Engine**: Asynchronous public URL generator for downloading 3-Statement Excel models (`Dabur_Model.xlsx`).
-- **Executive Consultation Modal**: Online advisory reservation form submitting leads directly to Supabase PostgreSQL.
+* **3D Financial Canvas (`FinancialBackground.jsx`)**: Real-time HTML5 3D candlestick and financial wave chart background animation.
+* **Verified Credentials & Case Studies**: Accredited certifications grid featuring dynamic Supabase data fetching, displaying **interactive certificate document previews** directly on the cards and details modal.
+* **Supabase Storage Download Engine**: Asynchronous public URL generator for downloading 3-Statement Excel models (`Dabur_Model.xlsx`).
+* **Executive Consultation Modal**: Online advisory reservation form submitting leads directly to Supabase PostgreSQL.
+
+### 💬 3. Integrated WhatsApp Chat Widget (Both Platforms)
+* **Interactive Floating Chat Button**: Fixed in the bottom-right corner of both the Blog and Portfolio platforms.
+* **Live Hover Options**: Hovering reveals a sleek floating status card ("Tushar Singh - WhatsApp Advisory Group") with a direct action button to join the community, along with a clean "Chat on WhatsApp" tooltip pill.
+* **Smooth Animations**: Animated with subtle scaling hover effects (`hover:scale-110`) and ambient ping pulses.
 
 ---
 
@@ -39,7 +46,7 @@ An institutional-grade **Financial Insights Blog & Legal Advisory Portfolio** we
                       ┌─────────────────────────────────────┴─────────────────────────────────────┐
                       ▼                                                                           ▼
         ┌───────────────────────────┐                                               ┌───────────────────────────┐
-        │    Main Blog Platform     │                                               │     Advisor Portfolio     │
+        │   Finlenss Blog Platform  │                                               │     Advisor Portfolio     │
         │  (frontend-main - :5173)   │                                               │(frontend-portfolio - :5174)│
         └─────────────┬─────────────┘                                               └─────────────┬─────────────┘
                       │                                                                           │
@@ -48,7 +55,7 @@ An institutional-grade **Financial Insights Blog & Legal Advisory Portfolio** we
                       ▼ Direct Supabase SDK                 ▼ REST APIs / Fallback                ▼ Direct Supabase SDK
        ┌──────────────────────────────┐              ┌──────────────────────────────┐              ┌──────────────────────────────┐
        │     Supabase PostgreSQL      │              │      Express.js Backend      │              │       Supabase Storage       │
-       │    (Cloud DB & Tables)       │              │       (Node.js - :5000)      │              │   (Bucket: financial-models) │
+       │    (Cloud DB & Realtime)     │              │       (Node.js - :5000)      │              │   (Bucket: financial-models) │
        └──────────────────────────────┘              └──────────────┬───────────────┘              └──────────────────────────────┘
                                                                     │
                                                                     ▼
@@ -61,25 +68,25 @@ An institutional-grade **Financial Insights Blog & Legal Advisory Portfolio** we
 
 ## 🛠️ Tech Stack
 
-- **Frontend Core**: React 18, Vite 6, React Router DOM 7
-- **Database & Storage**: Supabase (PostgreSQL), `@supabase/supabase-js`, Supabase Storage Buckets
-- **Styling & Icons**: TailwindCSS 3 (Dark `#0A0F1D`, Card `#111827`), Lucide React
-- **Typography**: `Plus Jakarta Sans` (Body text), `Outfit` (Display headings)
-- **Animations**: Framer Motion 12, HTML5 Canvas 3D Graphics
-- **Backend (Fallback)**: Node.js, Express.js 4, SQLite3, Multer, JWT
+* **Frontend Core**: React 18, Vite 6, React Router DOM 7
+* **Database & Storage**: Supabase (PostgreSQL), `@supabase/supabase-js`, Supabase Storage Buckets
+* **Styling & Icons**: TailwindCSS 3 (Dark `#0A0F1D`, Card `#111827`), Lucide React
+* **Typography**: `Plus Jakarta Sans` (Body text), `Outfit` (Display headings)
+* **Animations**: Framer Motion 12, HTML5 Canvas 3D Graphics
+* **Backend (Fallback & Upload)**: Node.js, Express.js 4, SQLite3, Multer, JWT
 
 ---
 
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
-- **Node.js**: v18.0.0 or higher
-- **npm**: v9.0.0 or higher
+* **Node.js**: v18.0.0 or higher
+* **npm**: v9.0.0 or higher
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/financial-blog-platform.git
-cd financial-blog-platform
+git clone https://github.com/ayushtete20/Mint.git
+cd Mint
 ```
 
 ### 2. Install Dependencies
@@ -102,7 +109,7 @@ npm install
 
 ## 🔑 Environment Variables Setup
 
-Create a `.env` file in both `frontend-main` and `frontend-portfolio` directories (refer to `.env.example`):
+Create a `.env` file in both `frontend-main` and `frontend-portfolio` directories:
 
 ```env
 # frontend-main/.env & frontend-portfolio/.env
@@ -125,31 +132,31 @@ npm run dev
 cd frontend-portfolio
 npm run dev
 
-# Terminal 3 (Optional): Start Express API Server (:5000)
+# Terminal 3: Start Express API Server & File Uploader (:5000)
 cd backend
 npm run dev
 ```
 
 ### Access Ports:
-- 📰 **Main Blog**: [http://localhost:5173](http://localhost:5173)
-- 🔐 **Admin Portal**: [http://localhost:5173/admin/login](http://localhost:5173/admin/login)
-- ⚡ **Supabase Seed Tool**: [http://localhost:5173/admin/seed](http://localhost:5173/admin/seed)
-- 💼 **Advisor Portfolio**: [http://localhost:5174](http://localhost:5174)
+* 📰 **Main Blog**: [http://localhost:5173](http://localhost:5173)
+* 🔐 **Admin Portal**: [http://localhost:5173/admin/login](http://localhost:5173/admin/login)
+* ⚡ **Supabase Seed Tool**: [http://localhost:5173/admin/seed](http://localhost:5173/admin/seed)
+* 💼 **Advisor Portfolio**: [http://localhost:5174](http://localhost:5174)
+* 🚀 **Backend Express API**: [http://localhost:5000](http://localhost:5000)
 
 ---
 
 ## ⚡ Supabase Data Initialization
 
 1. Navigate to the protected seed panel: **[http://localhost:5173/admin/seed](http://localhost:5173/admin/seed)**
-2. Review the database initialization alert.
-3. Click **"Initialize Dabur Database"** to automatically push the 3-Statement Financial Model JSON and certification data to your Supabase PostgreSQL cloud database.
+2. Click **"Initialize Dabur Database"** to automatically push the 3-Statement Financial Model JSON and certification data to your Supabase PostgreSQL cloud database.
 
 ---
 
 ## 📂 Project Structure
 
 ```
-d:\Tushar\financial-blog-platform\
+.
 ├── backend/                              # Node.js Express REST API server
 │   ├── src/
 │   │   ├── config/db.js                  # SQLite fallback database initialization
@@ -179,13 +186,13 @@ d:\Tushar\financial-blog-platform\
 
 ## 🔒 Security & Best Practices
 
-- **Private Secrets**: Real Supabase keys `.env` files are excluded from Git via `.gitignore`.
-- **MIME & Extension Security**: File uploader validates allowed document formats (`.xlsx`, `.xls`, `.csv`, `.pdf`, `.png`, `.jpg`, `.docx`). Executables are rejected.
-- **Strict Controls**: Mutation endpoints require valid authentication tokens.
+* **Master Authorization Bypass**: Supports both local dev token and direct Express admin verification for seamless upload operations.
+* **MIME & Extension Security**: File uploader validates allowed document formats (`.xlsx`, `.xls`, `.csv`, `.pdf`, `.png`, `.jpg`, `.docx`). Executables are strictly rejected.
+* **Private Secrets**: Real Supabase keys `.env` files are excluded from Git via `.gitignore`.
 
 ---
 
 ## 📄 License & Author
 
-- **Author**: Tushar Singh
-- **License**: [MIT License](LICENSE)
+* **Author**: Tushar Singh
+* **License**: [MIT License](LICENSE)
