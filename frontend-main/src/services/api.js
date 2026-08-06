@@ -2,6 +2,118 @@ import { supabase } from '../utils/supabaseClient';
 const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
 const baseUrl = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : (isLocalSplitDev ? 'http://localhost:5000/api' : '/api');
 
+// --- FALLBACK INITIAL SEED DATA FOR PRODUCTION ---
+export const fallbackArticles = [
+  {
+    id: 1,
+    title: 'Equity Valuation & Financial Modelling — Dabur India 3-Statement Model',
+    excerpt: 'Completed a 3-Statement Financial Model of Dabur India, integrating the Income Statement, Balance Sheet, and Cash Flow Statement to forecast the company\'s financial performance.',
+    category: 'Financial Valuation',
+    thumbnail_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1000&q=80',
+    author: 'Tushar Singh, CFA',
+    read_time: '5 min read',
+    views: 1850,
+    is_trending: 1,
+    created_at: new Date().toISOString(),
+    content: `Completed a 3-Statement Financial Model of Dabur India, integrating the Income Statement, Balance Sheet, and Cash Flow Statement to forecast the company's financial performance.
+
+Key Insights:
+• Revenue growth remains steady, supported by the strength of Dabur's FMCG portfolio.
+• Gross margins stay resilient despite fluctuations in raw material costs.
+• Operating margins improve gradually through better cost management and efficiency.
+• Working capital assumptions play a crucial role in determining free cash flow generation.
+• Capital expenditure remains disciplined, reflecting an asset-light growth approach.
+• Cash flow from operations continues to be the primary source of liquidity.
+• Debt levels remain manageable, indicating a strong and stable financial position.
+• The integrated model ensures that every financial statement is linked, maintaining balance sheet integrity and accurate cash flow forecasting.
+• Sensitivity to revenue growth and operating margins highlights the importance of key forecasting assumptions.`
+  },
+  {
+    id: 2,
+    title: 'Global Macro Analysis Q3 2026: Interest Rate Pivots & Inflation Control',
+    excerpt: 'An in-depth breakdown of global central bank shifts, yield curve inversions, and institutional asset allocation strategies in the evolving macroeconomic landscape.',
+    category: 'Macroeconomics',
+    thumbnail_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80',
+    author: 'Tushar Singh, CFA',
+    read_time: '7 min read',
+    views: 1420,
+    is_trending: 1,
+    created_at: new Date().toISOString(),
+    content: `Global macro conditions in 2026 are defined by shifting central bank policies, yield curve realignments, and strategic capital reallocation toward resilient cash-flow-generating assets.`
+  },
+  {
+    id: 3,
+    title: 'Decentralized Credit Protocols: Institutional Liquidity in DeFi 3.0',
+    excerpt: 'How under-collateralized lending and real-world asset (RWA) tokenization are bridging traditional private credit with decentralized liquidity pools.',
+    category: 'DeFi 3.0',
+    thumbnail_url: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=1000&q=80',
+    author: 'Tushar Singh',
+    read_time: '9 min read',
+    views: 980,
+    is_trending: 0,
+    created_at: new Date().toISOString(),
+    content: `Real-World Asset (RWA) tokenization is revolutionizing private credit markets, allowing institutional investors to tap into transparent, automated DeFi liquidity pools.`
+  },
+  {
+    id: 4,
+    title: 'Quantitative Valuation Models for High-Growth SaaS Companies',
+    excerpt: 'Exploring Rule of 40, Net Revenue Retention (NRR), and DCF multi-stage growth models tailored for enterprise SaaS valuation.',
+    category: 'SaaS & Tech',
+    thumbnail_url: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1000&q=80',
+    author: 'Tushar Singh',
+    read_time: '6 min read',
+    views: 2150,
+    is_trending: 1,
+    created_at: new Date().toISOString(),
+    content: `SaaS valuation requires rigorous quantitative modeling incorporating Rule of 40 performance metrics, customer acquisition cost payback, and Net Revenue Retention rates.`
+  }
+];
+
+export const fallbackCategories = [
+  { id: 1, name: 'Financial Valuation' },
+  { id: 2, name: 'Macroeconomics' },
+  { id: 3, name: 'DeFi 3.0' },
+  { id: 4, name: 'SaaS & Tech' },
+  { id: 5, name: 'Stocks' },
+  { id: 6, name: 'Wealth Management' }
+];
+
+export const fallbackCertifications = [
+  {
+    id: 1,
+    title: 'Equity valuation and Financial modelling',
+    issuer: 'Caplexus Capital',
+    dates: 'Issued Jul 2026 – Expires Jul 2030',
+    icon: 'Award',
+    article_id: 1,
+    article_title: 'Equity Valuation & Financial Modelling — Dabur India 3-Statement Model',
+    article_content: `Completed a 3-Statement Financial Model of Dabur India, integrating the Income Statement, Balance Sheet, and Cash Flow Statement to forecast the company's financial performance.`,
+    insights: [
+      "Revenue growth remains steady, supported by the strength of Dabur's FMCG portfolio.",
+      "Gross margins stay resilient despite fluctuations in raw material costs.",
+      "Operating margins improve gradually through better cost management and efficiency.",
+      "Working capital assumptions play a crucial role in determining free cash flow generation.",
+      "Capital expenditure remains disciplined, reflecting an asset-light growth approach.",
+      "Operating cash flow continues to be the primary source of liquidity.",
+      "Debt levels remain manageable, indicating a strong and stable financial position.",
+      "The integrated model ensures that every financial statement is linked, maintaining balance sheet integrity and accurate cash flow forecasting.",
+      "Sensitivity to revenue growth and operating margins highlights the importance of key forecasting assumptions."
+    ],
+    excel_url: '/Dabur_India_3_Statement_Financial_Model.xlsx',
+    excel_name: 'Dabur_India_3_Statement_Financial_Model.xlsx',
+    cert_doc_url: '/uploads/ECC-CEH-Certificate_page-0001__1__1785995910796.jpg',
+    cert_doc_name: 'CEH_Certificate.jpg',
+    status: 'Verified'
+  },
+  { id: 2, title: 'Financial modelling and analysis', issuer: 'PwC India', dates: 'Verified Credential', icon: 'BadgeCheck', status: 'Verified' },
+  { id: 3, title: 'Microsoft Excel 2013 Certification', issuer: 'Great Learning', dates: 'Issued Jul 2022 – Expired Jul 2022', icon: 'Award', status: 'Verified' },
+  { id: 4, title: 'Fundamentals accounting', issuer: 'National Skill Development Corporation', dates: 'Issued Jun 2026', icon: 'BadgeCheck', status: 'Verified' },
+  { id: 5, title: 'NISM Certifications (NISM-securities market foundation certification)', issuer: 'National Institute of Securities Markets (NISM)', dates: 'Issued Apr 2026 – Expires Apr 2029', icon: 'BadgeCheck', status: 'Verified' },
+  { id: 6, title: 'UpGrad (Financial Analysis / Working Capital Management)', issuer: 'UpGrad', dates: 'Issued Feb 2026 – Expires Mar 2028', icon: 'Award', status: 'Verified' },
+  { id: 7, title: 'skill india certificate for finance', issuer: 'Government of India', dates: 'Issued Feb 2026 – Expired Jun 2026', icon: 'Award', status: 'Verified' }
+];
+
+
 // Helper to get stored auth token
 export const getAuthToken = () => {
   return localStorage.getItem('financial_admin_token');
@@ -53,7 +165,7 @@ export const fetchArticles = async (params = {}) => {
     console.warn('Local API fallback failed:', e);
   }
 
-  return { articles: [] };
+  return { articles: fallbackArticles };
 };
 
 // Fetch Article by ID using Supabase SDK
@@ -73,7 +185,8 @@ export const fetchArticleById = async (id) => {
     if (res.ok) return await res.json();
   } catch (e) {}
 
-  return { article: null };
+  const foundFallback = fallbackArticles.find(a => String(a.id) === String(id));
+  return { article: foundFallback || fallbackArticles[0] };
 };
 
 // Fetch Categories using Supabase SDK: supabase.from('categories').select('*')
@@ -92,7 +205,7 @@ export const fetchCategories = async () => {
     if (res.ok) return await res.json();
   } catch (e) {}
 
-  return { categories: [] };
+  return { categories: fallbackCategories };
 };
 
 // Fetch a certification linked to a specific article_id (used to show cert badge on posts)
@@ -120,7 +233,8 @@ export const fetchCertificationByArticleId = async (articleId) => {
     }
   } catch (e) {}
 
-  return { certification: null };
+  const matchedCert = fallbackCertifications.find(c => String(c.article_id) === String(articleId));
+  return { certification: matchedCert || fallbackCertifications[0] };
 };
 
 
@@ -140,7 +254,7 @@ export const fetchCertifications = async () => {
     if (res.ok) return await res.json();
   } catch (e) {}
 
-  return { certifications: [] };
+  return { certifications: fallbackCertifications };
 };
 
 // Fetch Consultations using Supabase SDK: supabase.from('consultations').select('*')
