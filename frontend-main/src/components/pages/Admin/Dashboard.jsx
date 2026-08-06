@@ -897,20 +897,35 @@ export const Dashboard = () => {
                       </td>
 
                       <td className="py-3.5 px-4 text-center">
-                        {cert.attachment_url ? (
-                          <a
-                            href={cert.attachment_url}
-                            download
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200 transition-all shadow-2xs"
-                          >
-                            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
-                            <span>Download Model (.xlsx)</span>
-                          </a>
-                        ) : (
-                          <span className="text-[11px] text-[#0D47A1]/50 italic">No file attached</span>
-                        )}
+                        <div className="flex flex-col gap-1 items-center">
+                          {(cert.excel_url || cert.attachment_url) && (
+                            <a
+                              href={(cert.excel_url || cert.attachment_url).startsWith('/uploads') ? `http://localhost:5000${cert.excel_url || cert.attachment_url}` : (cert.excel_url || cert.attachment_url)}
+                              download
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200 transition-all shadow-2xs"
+                            >
+                              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
+                              <span>Model (.xlsx)</span>
+                            </a>
+                          )}
+                          {cert.cert_doc_url && (
+                            <a
+                              href={cert.cert_doc_url.startsWith('/uploads') ? `http://localhost:5000${cert.cert_doc_url}` : cert.cert_doc_url}
+                              download
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold bg-blue-100 text-blue-900 border border-blue-300 hover:bg-blue-200 transition-all shadow-2xs"
+                            >
+                              <Award className="w-3.5 h-3.5 text-[#2196F3]" />
+                              <span>Certificate</span>
+                            </a>
+                          )}
+                          {!cert.excel_url && !cert.attachment_url && !cert.cert_doc_url && (
+                            <span className="text-[11px] text-[#0D47A1]/50 italic">No files attached</span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="py-3.5 px-4 text-right space-x-2">
@@ -1109,6 +1124,17 @@ export const Dashboard = () => {
                       <span className="text-xs text-[#0D47A1]/60 italic">No certificate file yet.</span>
                     )}
                   </div>
+
+                  {/* Visual Image Preview inside the form modal */}
+                  {certForm.cert_doc_url && /\.(jpg|jpeg|png|gif|webp)$/i.test(certForm.cert_doc_url) && (
+                    <div className="mt-3 rounded-lg overflow-hidden border border-[#90CAF9] bg-white p-1 max-w-xs shadow-sm">
+                      <img 
+                        src={certForm.cert_doc_url.startsWith('/uploads') ? `http://localhost:5000${certForm.cert_doc_url}` : certForm.cert_doc_url} 
+                        alt="Certificate Preview" 
+                        className="w-full h-32 object-contain bg-slate-50"
+                      />
+                    </div>
+                  )}
                 </div>
 
               </div>

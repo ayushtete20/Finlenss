@@ -37,7 +37,8 @@ const defaultCertifications = [
     article_title: 'Equity Valuation & Financial Modelling — Dabur India 3-Statement Model',
     excel_url: '/Dabur_India_3_Statement_Financial_Model.xlsx',
     excel_name: 'Dabur_India_3_Statement_Financial_Model.xlsx',
-    cert_doc_url: null,
+    cert_doc_url: '/uploads/ECC-CEH-Certificate_page-0001__1__1785995910796.jpg',
+    cert_doc_name: 'CEH_Certificate.jpg',
     article_content: `Completed a 3-Statement Financial Model of Dabur India, integrating the Income Statement, Balance Sheet, and Cash Flow Statement to forecast the company's financial performance.`,
     insights: [
       "Revenue growth remains steady, supported by the strength of Dabur's FMCG portfolio.",
@@ -117,8 +118,16 @@ export const Certifications = () => {
           {certifications.map((cert, idx) => {
             const Icon = cert.icon === 'BadgeCheck' ? BadgeCheck : Award;
             // Support both old attachment_url field and new separate fields
-            const excelUrl = cert.excel_url || cert.attachment_url || null;
-            const certDocUrl = cert.cert_doc_url || null;
+            const rawExcelUrl = cert.excel_url || cert.attachment_url || null;
+            const excelUrl = rawExcelUrl && rawExcelUrl.startsWith('/uploads')
+              ? `http://localhost:5000${rawExcelUrl}`
+              : rawExcelUrl;
+
+            const rawCertDocUrl = cert.cert_doc_url || null;
+            const certDocUrl = rawCertDocUrl && rawCertDocUrl.startsWith('/uploads')
+              ? `http://localhost:5000${rawCertDocUrl}`
+              : rawCertDocUrl;
+
             const hasAsset = Boolean(excelUrl || certDocUrl || cert.article_id || cert.article_content);
             const blogUrl = cert.article_id ? `http://localhost:5173/post/${cert.article_id}` : null;
 

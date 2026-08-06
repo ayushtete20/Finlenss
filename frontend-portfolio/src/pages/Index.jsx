@@ -7,6 +7,7 @@ import ExperienceEducation from '../components/ExperienceEducation';
 import Certifications from '../components/Certifications';
 import Skills from '../components/Skills';
 import Contact from '../components/Contact';
+import WhatsAppFloatingBtn from '../components/WhatsAppFloatingBtn';
 import { ExternalLink } from 'lucide-react';
 
 export const Index = () => {
@@ -53,8 +54,8 @@ export const Index = () => {
             </a>
           </div>
 
-          {/* Right Edge (CTA): Solid dark blue button with ExternalLink icon */}
-          <div>
+          {/* Right Edge (CTA): Solid dark blue button */}
+          <div className="flex items-center gap-2.5">
             <a
               href="http://localhost:5173"
               target="_blank"
@@ -84,6 +85,9 @@ export const Index = () => {
           <p>© 2026 Tushar Singh. All Rights Reserved. Legal & Financial Advisory Portfolio.</p>
         </div>
       </footer>
+
+      {/* Floating WhatsApp Chat Button */}
+      <WhatsAppFloatingBtn />
     </div>
   );
 };

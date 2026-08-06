@@ -99,6 +99,37 @@ export const fetchCategories = async () => {
   return { categories: [] };
 };
 
+// Fetch a certification linked to a specific article_id (used to show cert badge on posts)
+export const fetchCertificationByArticleId = async (articleId) => {
+  try {
+    const { data, error } = await supabase
+      .from('certifications')
+      .select('*')
+      .eq('article_id', articleId)
+      .maybeSingle();
+    if (!error && data) {
+      return { certification: data };
+    }
+  } catch (err) {
+    console.warn('Supabase fetchCertificationByArticleId error:', err);
+  }
+
+  try {
+    const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
+    const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
+    const res = await fetch(`${baseUrl}/certifications`);
+    if (res.ok) {
+      const data = await res.json();
+      const certs = data.certifications || [];
+      const matched = certs.find(c => String(c.article_id) === String(articleId));
+      if (matched) return { certification: matched };
+    }
+  } catch (e) {}
+
+  return { certification: null };
+};
+
+
 // Fetch Certifications using Supabase SDK: supabase.from('certifications').select('*')
 export const fetchCertifications = async () => {
   try {
@@ -364,6 +395,27 @@ export const trackArticleClick = async (id) => {};
 
 // File Upload
 export const uploadFile = async (file) => {
+  // Upload directly to the local Express backend server
+  try {
+    const token = getAuthToken();
+    const formData = new FormData();
+    formData.append('file', file);
+    const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
+    const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
+    const res = await fetch(`${baseUrl}/upload`, {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: formData
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
+  } catch (e) {
+    console.warn('Express backend upload failed, falling back to Supabase:', e);
+  }
+
+  // Fallback to Supabase Storage if local server is unreachable
   try {
     const filename = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const { data, error } = await supabase.storage.from('financial-models').upload(filename, file);
@@ -376,18 +428,9 @@ export const uploadFile = async (file) => {
         originalName: file.name
       };
     }
-  } catch (e) {}
+  } catch (err) {
+    console.error('Supabase upload fallback failed:', err);
+  }
 
-  // Fallback to Express backend upload
-  const token = getAuthToken();
-  const formData = new FormData();
-  formData.append('file', file);
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
-  const res = await fetch(`${baseUrl}/upload`, {
-    method: 'POST',
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: formData
-  });
-  return await res.json();
+  throw new Error('All file upload destinations failed.');
 };

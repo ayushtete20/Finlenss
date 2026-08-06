@@ -18,13 +18,13 @@ export const Header = ({ onSearchChange, searchTerm }) => {
     <header className="bg-[#E3F2FD]/90 border-b border-[#90CAF9] sticky top-0 z-50 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          {/* Logo - Square Box + Serif MINT. */}
+          {/* Logo - Square Box + Serif Finlenss. */}
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="w-8 h-8 rounded border-2 border-[#0D47A1] bg-[#E3F2FD] flex items-center justify-center text-[#0D47A1] font-bold group-hover:bg-[#0D47A1] group-hover:text-white transition-colors">
               <TrendingUp className="w-5 h-5 stroke-[2.5]" />
             </div>
             <span className="text-2xl font-extrabold text-[#0D47A1] font-serif tracking-tight">
-              MINT.
+              Finlenss.
             </span>
           </Link>
 
@@ -42,9 +42,9 @@ export const Header = ({ onSearchChange, searchTerm }) => {
           </nav>
 
           {/* Search Bar & CTA */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
             {location.pathname === '/' && onSearchChange && (
-              <div className="relative w-48 lg:w-60">
+              <div className="relative w-40 lg:w-52">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-[#0D47A1]/50" />
                 <input
                   type="text"

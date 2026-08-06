@@ -1,14 +1,24 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, Eye, ArrowUpRight, User } from 'lucide-react';
+import { ArrowUpRight, BadgeCheck } from 'lucide-react';
 
-export const ClayCard = ({ article }) => {
-  const { id, title, excerpt, category, thumbnail_url, author, read_time, views, created_at } = article;
+export const ClayCard = ({ article, linkedCert }) => {
+  const { id, title, excerpt, category, author, read_time } = article;
 
   return (
     <article className="bg-[#0D47A1] text-white border border-[#90CAF9] shadow-lg group flex flex-col h-full overflow-hidden p-6 sm:p-7 relative rounded-2xl hover:border-[#2196F3] hover:-translate-y-1 transition-all duration-300">
+      {/* Certified credential banner — shown when a certification is linked */}
+      {linkedCert && (
+        <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-amber-500 to-yellow-400 flex items-center gap-2 px-4 py-1.5 z-10">
+          <BadgeCheck className="w-3.5 h-3.5 text-amber-900 shrink-0" />
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 truncate">
+            Verified Credential · {linkedCert.issuer || linkedCert.title}
+          </span>
+        </div>
+      )}
+
       {/* Category Pill Tag */}
-      <div className="flex justify-between items-start mb-4">
+      <div className={`flex justify-between items-start mb-4 ${linkedCert ? 'mt-7' : ''}`}>
         <span className="px-3 py-1 text-[10px] font-bold rounded-md bg-[#2196F3] text-white uppercase tracking-wider">
           {category || 'FEATURED'}
         </span>

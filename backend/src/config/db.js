@@ -127,7 +127,7 @@ export const initDB = () => {
           ]),
           '/Dabur_India_3_Statement_Financial_Model.xlsx',
           'Dabur_India_3_Statement_Financial_Model.xlsx',
-          null, null,
+          '/uploads/ECC-CEH-Certificate_page-0001__1__1785995910796.jpg', 'CEH_Certificate.jpg',
           'Verified'
         ]);
 

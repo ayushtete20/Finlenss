@@ -9,6 +9,7 @@ import Dashboard from './components/pages/Admin/Dashboard';
 import Editor from './components/pages/Admin/Editor';
 import AdminSeedPanel from './components/pages/Admin/AdminSeedPanel';
 import FinancialBackground from './components/UI/FinancialBackground';
+import WhatsAppFloatingBtn from './components/UI/WhatsAppFloatingBtn';
 import { trackVisit } from './services/api';
 
 export const App = () => {
@@ -43,6 +44,7 @@ export const App = () => {
         </main>
 
         <Footer />
+        <WhatsAppFloatingBtn />
       </div>
     </Router>
   );

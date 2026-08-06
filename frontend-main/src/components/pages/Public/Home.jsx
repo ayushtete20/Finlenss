@@ -1,15 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchArticles, fetchCategories } from '../../../services/api';
+import { fetchArticles, fetchCategories, fetchCertifications } from '../../../services/api';
+import { supabase } from '../../../utils/supabaseClient';
 import ClayCard from '../../UI/ClayCard';
-import { ArrowUpRight, TrendingUp, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
+import { TrendingUp, RefreshCw, AlertCircle, Sparkles, Zap } from 'lucide-react';
+
+const LATEST_LIMIT = 6;
 
 export const Home = ({ searchTerm, setSearchTerm }) => {
   const [articles, setArticles] = useState([]);
+  const [certMap, setCertMap] = useState({}); // articleId => certification object
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [categories, setCategories] = useState(['All']);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [liveUpdate, setLiveUpdate] = useState(false); // flashes badge when realtime fires
+
+  // Track latest params in a ref so the realtime callback can call loadArticles correctly
+  const paramsRef = useRef({ category: selectedCategory, search: searchTerm });
+  useEffect(() => {
+    paramsRef.current = { category: selectedCategory, search: searchTerm };
+  }, [selectedCategory, searchTerm]);
 
   const loadCategories = async () => {
     try {
@@ -25,14 +36,11 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
     }
   };
 
-  const loadArticles = async () => {
+  const loadArticles = async (params = paramsRef.current) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchArticles({
-        category: selectedCategory,
-        search: searchTerm
-      });
+      const data = await fetchArticles(params);
       setArticles(data.articles || []);
     } catch (err) {
       setError('Unable to load financial insights from server.');
@@ -41,13 +49,48 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
     }
   };
 
+  // Initial load
   useEffect(() => {
     loadCategories();
+
+    // Load certifications and build a map: articleId => cert
+    fetchCertifications().then(data => {
+      const certs = data.certifications || [];
+      const map = {};
+      certs.forEach(cert => {
+        if (cert.article_id) {
+          map[String(cert.article_id)] = cert;
+        }
+      });
+      setCertMap(map);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
-    loadArticles();
+    loadArticles({ category: selectedCategory, search: searchTerm });
   }, [selectedCategory, searchTerm]);
+
+  // ── Supabase Realtime: auto-refresh when articles table changes ──────────────
+  useEffect(() => {
+    const channel = supabase
+      .channel('home-articles-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'articles' },
+        () => {
+          // Flash "Live Updated" badge
+          setLiveUpdate(true);
+          setTimeout(() => setLiveUpdate(false), 3000);
+          // Re-fetch with the current active filter/search
+          loadArticles(paramsRef.current);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Sort articles for trending sidebar: owner-pinned first, then highest views
   const sortedByTrending = [...articles].sort((a, b) => {
@@ -60,9 +103,14 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
   const featuredArticle = articles.length > 0 ? articles[0] : null;
   const trendingArticles = sortedByTrending.slice(0, 4);
 
+  // Latest Insights: newest first, capped at LATEST_LIMIT (6)
+  const latestArticles = [...articles]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, LATEST_LIMIT);
+
   return (
     <div className="space-y-16 py-4">
-      {/* Superdesign Draft Hero Grid Section */}
+      {/* Hero Grid Section */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Hero Card - Featured Selection */}
         <div className="lg:col-span-8">
@@ -168,10 +216,24 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
       {/* Latest Insights Section */}
       <section className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#0D47A1]/10 pb-4">
-          <div>
+          <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white bg-[#0D47A1] px-6 py-2.5 rounded-xl shadow-md font-serif inline-block">
               Latest Insights
             </h2>
+
+            {/* Live update flash badge */}
+            {liveUpdate && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-lg animate-pulse">
+                <Zap className="w-3 h-3 fill-white" /> Live Updated
+              </span>
+            )}
+
+            {/* Post count badge */}
+            {!loading && articles.length > 0 && (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#0D47A1]/60 border border-[#0D47A1]/15 px-2.5 py-1 rounded-full">
+                Showing {latestArticles.length} of {articles.length}
+              </span>
+            )}
           </div>
 
           {/* Category Filter Pills */}
@@ -210,12 +272,20 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
           </div>
         )}
 
-        {/* Card Grid */}
-        {!loading && !error && articles.length > 0 && (
+        {/* Card Grid — latest 6 posts */}
+        {!loading && !error && latestArticles.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {articles.map((article) => (
-              <ClayCard key={article.id} article={article} />
+            {latestArticles.map((article) => (
+              <ClayCard key={article.id} article={article} linkedCert={certMap[String(article.id)] || null} />
             ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && !error && latestArticles.length === 0 && (
+          <div className="py-20 text-center space-y-2">
+            <AlertCircle className="w-8 h-8 text-[#0D47A1]/40 mx-auto" />
+            <p className="text-sm font-semibold text-[#0D47A1]/50">No articles found for this filter.</p>
           </div>
         )}
       </section>
