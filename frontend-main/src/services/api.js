@@ -1,4 +1,5 @@
 import { supabase } from '../utils/supabaseClient';
+const baseUrl = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : (isLocalSplitDev ? 'http://localhost:5000/api' : '/api');
 
 // Helper to get stored auth token
 export const getAuthToken = () => {
@@ -42,8 +43,6 @@ export const fetchArticles = async (params = {}) => {
 
   // Local fallback if Supabase is unreachable
   try {
-    const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-    const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
     const query = new URLSearchParams();
     if (params.category && params.category !== 'All') query.append('category', params.category);
     if (params.search) query.append('search', params.search);
@@ -69,8 +68,6 @@ export const fetchArticleById = async (id) => {
 
   // Local fallback
   try {
-    const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-    const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
     const res = await fetch(`${baseUrl}/blogs/${id}`);
     if (res.ok) return await res.json();
   } catch (e) {}
@@ -90,8 +87,6 @@ export const fetchCategories = async () => {
   }
 
   try {
-    const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-    const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
     const res = await fetch(`${baseUrl}/blogs/categories/all`);
     if (res.ok) return await res.json();
   } catch (e) {}
@@ -115,8 +110,6 @@ export const fetchCertificationByArticleId = async (articleId) => {
   }
 
   try {
-    const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-    const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
     const res = await fetch(`${baseUrl}/certifications`);
     if (res.ok) {
       const data = await res.json();
@@ -142,8 +135,6 @@ export const fetchCertifications = async () => {
   }
 
   try {
-    const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-    const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
     const res = await fetch(`${baseUrl}/certifications`);
     if (res.ok) return await res.json();
   } catch (e) {}
@@ -164,8 +155,6 @@ export const fetchConsultations = async () => {
 
   try {
     const token = getAuthToken();
-    const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-    const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
     const res = await fetch(`${baseUrl}/admin/consultations`, {
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
     });
@@ -184,8 +173,6 @@ export const createArticle = async (articleData) => {
 
   // Local fallback
   const token = getAuthToken();
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
   const res = await fetch(`${baseUrl}/blogs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -201,8 +188,6 @@ export const updateArticle = async (id, articleData) => {
   } catch (e) {}
 
   const token = getAuthToken();
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
   const res = await fetch(`${baseUrl}/blogs/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -217,8 +202,6 @@ export const deleteArticle = async (id) => {
   } catch (e) {}
 
   const token = getAuthToken();
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
   const res = await fetch(`${baseUrl}/blogs/${id}`, {
     method: 'DELETE',
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
@@ -233,8 +216,6 @@ export const createCertification = async (certData) => {
   } catch (e) {}
 
   const token = getAuthToken();
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
   const res = await fetch(`${baseUrl}/admin/certifications`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -249,8 +230,6 @@ export const updateCertification = async (id, certData) => {
   } catch (e) {}
 
   const token = getAuthToken();
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
   const res = await fetch(`${baseUrl}/admin/certifications/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -265,8 +244,6 @@ export const deleteCertification = async (id) => {
   } catch (e) {}
 
   const token = getAuthToken();
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
   const res = await fetch(`${baseUrl}/admin/certifications/${id}`, {
     method: 'DELETE',
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
@@ -280,8 +257,6 @@ export const toggleArticleTrending = async (id, isTrending) => {
   } catch (e) {}
 
   const token = getAuthToken();
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
   const res = await fetch(`${baseUrl}/blogs/${id}/trending`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -296,8 +271,6 @@ export const createCategory = async (name) => {
   } catch (e) {}
 
   const token = getAuthToken();
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
   const res = await fetch(`${baseUrl}/blogs/categories`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -312,8 +285,6 @@ export const deleteCategory = async (id) => {
   } catch (e) {}
 
   const token = getAuthToken();
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
   const res = await fetch(`${baseUrl}/blogs/categories/${id}`, {
     method: 'DELETE',
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
@@ -327,8 +298,6 @@ export const updateConsultationStatus = async (id, status) => {
   } catch (e) {}
 
   const token = getAuthToken();
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
   const res = await fetch(`${baseUrl}/admin/consultations/${id}/status`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -343,8 +312,6 @@ export const deleteConsultation = async (id) => {
   } catch (e) {}
 
   const token = getAuthToken();
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
   const res = await fetch(`${baseUrl}/admin/consultations/${id}`, {
     method: 'DELETE',
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
@@ -359,8 +326,6 @@ export const loginAdmin = async (password) => {
   }
 
   try {
-    const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-    const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
     const res = await fetch(`${baseUrl}/admin/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -383,9 +348,6 @@ export const fetchSiteStats = async () => {
     const { count: leadCount } = await supabase.from('consultations').select('*', { count: 'exact', head: true });
     return { total_articles: artCount || 4, total_certifications: certCount || 7, total_consultations: leadCount || 1 };
   } catch (e) {}
-
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
   const res = await fetch(`${baseUrl}/blogs/stats/summary`);
   return await res.json();
 };
@@ -400,8 +362,6 @@ export const uploadFile = async (file) => {
     const token = getAuthToken();
     const formData = new FormData();
     formData.append('file', file);
-    const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-    const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
     const res = await fetch(`${baseUrl}/upload`, {
       method: 'POST',
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },

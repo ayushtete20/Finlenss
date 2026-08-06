@@ -68,7 +68,7 @@ export const Certifications = () => {
     const loadCerts = async () => {
       try {
         const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-        const apiTarget = isLocalSplitDev ? 'http://localhost:5000/api/certifications' : '/api/certifications';
+        const apiTarget = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/certifications` : (isLocalSplitDev ? 'http://localhost:5000/api/certifications' : '/api/certifications');
         const response = await fetch(apiTarget);
         const data = await response.json();
         if (data && data.certifications && data.certifications.length > 0) {
@@ -119,17 +119,21 @@ export const Certifications = () => {
             const Icon = cert.icon === 'BadgeCheck' ? BadgeCheck : Award;
             // Support both old attachment_url field and new separate fields
             const rawExcelUrl = cert.excel_url || cert.attachment_url || null;
+            const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
+            const backendUrl = import.meta.env.VITE_API_URL || (isLocalSplitDev ? 'http://localhost:5000' : '');
+            const mainAppUrl = import.meta.env.VITE_MAIN_APP_URL || (isLocalSplitDev ? 'http://localhost:5173' : '');
+
             const excelUrl = rawExcelUrl && rawExcelUrl.startsWith('/uploads')
-              ? `http://localhost:5000${rawExcelUrl}`
+              ? `${backendUrl}${rawExcelUrl}`
               : rawExcelUrl;
 
             const rawCertDocUrl = cert.cert_doc_url || null;
             const certDocUrl = rawCertDocUrl && rawCertDocUrl.startsWith('/uploads')
-              ? `http://localhost:5000${rawCertDocUrl}`
+              ? `${backendUrl}${rawCertDocUrl}`
               : rawCertDocUrl;
 
             const hasAsset = Boolean(excelUrl || certDocUrl || cert.article_id || cert.article_content);
-            const blogUrl = cert.article_id ? `http://localhost:5173/post/${cert.article_id}` : null;
+            const blogUrl = cert.article_id ? `${mainAppUrl}/post/${cert.article_id}` : null;
 
             // Detect if cert doc is an image
             const isImage = certDocUrl && /\.(jpg|jpeg|png|gif|webp)$/i.test(certDocUrl);

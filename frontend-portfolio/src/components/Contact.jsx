@@ -32,7 +32,7 @@ export const Contact = () => {
         console.warn('Supabase insertion notice, using API fallback:', error.message);
         // Fallback to Express backend if Supabase credentials are placeholder
         const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-        const baseUrl = isLocalSplitDev ? 'http://localhost:5000/api' : '/api';
+        const baseUrl = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : (isLocalSplitDev ? 'http://localhost:5000/api' : '/api');
         await fetch(`${baseUrl}/consultations`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

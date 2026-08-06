@@ -21,6 +21,9 @@ import {
 import { Plus, Edit3, Trash2, Search, Eye, FileText, BarChart3, AlertCircle, Sparkles, CheckCircle2, TrendingUp, Users, Flame, FolderPlus, Tag, Calendar, Mail, Phone, MessageSquare, Clock, Filter, Inbox, ShieldCheck, Award, FileSpreadsheet, Upload, Paperclip, BadgeCheck, ExternalLink, X, Database } from 'lucide-react';
 import ClayButton from '../../UI/ClayButton';
 
+const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
+const backendUrl = import.meta.env.VITE_API_URL || (isLocalSplitDev ? 'http://localhost:5000' : '');
+
 export const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('articles'); // 'articles' | 'consultations' | 'certifications'
   const [articles, setArticles] = useState([]);
@@ -900,7 +903,7 @@ export const Dashboard = () => {
                         <div className="flex flex-col gap-1 items-center">
                           {(cert.excel_url || cert.attachment_url) && (
                             <a
-                              href={(cert.excel_url || cert.attachment_url).startsWith('/uploads') ? `http://localhost:5000${cert.excel_url || cert.attachment_url}` : (cert.excel_url || cert.attachment_url)}
+                              href={(cert.excel_url || cert.attachment_url).startsWith('/uploads') ? `${backendUrl}${cert.excel_url || cert.attachment_url}` : (cert.excel_url || cert.attachment_url)}
                               download
                               target="_blank"
                               rel="noopener noreferrer"
@@ -912,7 +915,7 @@ export const Dashboard = () => {
                           )}
                           {cert.cert_doc_url && (
                             <a
-                              href={cert.cert_doc_url.startsWith('/uploads') ? `http://localhost:5000${cert.cert_doc_url}` : cert.cert_doc_url}
+                              href={cert.cert_doc_url.startsWith('/uploads') ? `${backendUrl}${cert.cert_doc_url}` : cert.cert_doc_url}
                               download
                               target="_blank"
                               rel="noopener noreferrer"
@@ -1129,7 +1132,7 @@ export const Dashboard = () => {
                   {certForm.cert_doc_url && /\.(jpg|jpeg|png|gif|webp)$/i.test(certForm.cert_doc_url) && (
                     <div className="mt-3 rounded-lg overflow-hidden border border-[#90CAF9] bg-white p-1 max-w-xs shadow-sm">
                       <img 
-                        src={certForm.cert_doc_url.startsWith('/uploads') ? `http://localhost:5000${certForm.cert_doc_url}` : certForm.cert_doc_url} 
+                        src={certForm.cert_doc_url.startsWith('/uploads') ? `${backendUrl}${certForm.cert_doc_url}` : certForm.cert_doc_url} 
                         alt="Certificate Preview" 
                         className="w-full h-32 object-contain bg-slate-50"
                       />

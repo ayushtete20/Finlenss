@@ -68,14 +68,17 @@ export const Post = () => {
     );
   }
 
+  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
+  const backendUrl = import.meta.env.VITE_API_URL || (isLocalSplitDev ? 'http://localhost:5000' : '');
+
   const rawExcelUrl = linkedCert?.excel_url || linkedCert?.attachment_url || null;
   const excelUrl = rawExcelUrl && rawExcelUrl.startsWith('/uploads')
-    ? `http://localhost:5000${rawExcelUrl}`
+    ? `${backendUrl}${rawExcelUrl}`
     : rawExcelUrl;
 
   const rawCertDocUrl = linkedCert?.cert_doc_url || null;
   const certDocUrl = rawCertDocUrl && rawCertDocUrl.startsWith('/uploads')
-    ? `http://localhost:5000${rawCertDocUrl}`
+    ? `${backendUrl}${rawCertDocUrl}`
     : rawCertDocUrl;
 
   const portfolioUrl = `/portfolio/#certifications`;

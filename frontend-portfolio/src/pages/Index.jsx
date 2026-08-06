@@ -10,6 +10,9 @@ import Contact from '../components/Contact';
 import WhatsAppFloatingBtn from '../components/WhatsAppFloatingBtn';
 import { ExternalLink } from 'lucide-react';
 
+const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
+const mainAppUrl = import.meta.env.VITE_MAIN_APP_URL || (isLocalSplitDev ? 'http://localhost:5173' : '/');
+
 export const Index = () => {
   return (
     <div className="min-h-screen bg-[#EAF2F8]/60 text-[#1E3A8A] flex flex-col justify-between font-sans antialiased relative z-0">
@@ -26,22 +29,19 @@ export const Index = () => {
               TS
             </div>
             <div className="flex flex-col">
-              <span className="font-extrabold text-[#1E3A8A] tracking-tight text-lg leading-tight uppercase">
-                TUSHAR SINGH
+              <span className="text-xs font-extrabold uppercase tracking-widest leading-none">
+                Tushar Singh
               </span>
-              <span className="text-[10px] font-bold tracking-widest text-[#2563EB] uppercase">
-                LAW & FINANCIAL ADVISORY
+              <span className="text-[10px] font-bold text-[#3b82f6] uppercase tracking-wider mt-0.5 leading-none">
+                Research Advisor
               </span>
             </div>
           </div>
 
-          {/* Middle/Right Side (Anchor Links) */}
-          <div className="hidden lg:flex items-center gap-7 text-xs font-bold uppercase tracking-wider text-[#1E3A8A]">
-            <a href="#experience-education" className="hover:text-[#2563EB] transition-colors">
-              EXPERIENCE & EDUCATION
-            </a>
-            <a href="#solutions" className="hover:text-[#2563EB] transition-colors">
-              SOLUTIONS
+          {/* Center: Anchors to sections within portfolio */}
+          <div className="hidden md:flex items-center gap-8 text-xs font-extrabold uppercase tracking-widest">
+            <a href="#about" className="hover:text-[#2563EB] transition-colors">
+              ABOUT
             </a>
             <a href="#certifications" className="hover:text-[#2563EB] transition-colors">
               CERTIFICATIONS
@@ -57,12 +57,12 @@ export const Index = () => {
           {/* Right Edge (CTA): Solid dark blue button */}
           <div className="flex items-center gap-2.5">
             <a
-              href="http://localhost:5173"
-              target="_blank"
-              rel="noreferrer"
+              href={mainAppUrl}
+              target={isLocalSplitDev ? "_blank" : undefined}
+              rel={isLocalSplitDev ? "noreferrer" : undefined}
               className="px-4 py-2.5 rounded-xl bg-[#1E3A8A] hover:bg-[#1d4ed8] text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5"
             >
-              MAIN BLOG PLATFORM <ExternalLink className="w-3.5 h-3.5" />
+              MAIN BLOG PLATFORM {isLocalSplitDev && <ExternalLink className="w-3.5 h-3.5" />}
             </a>
           </div>
         </div>
