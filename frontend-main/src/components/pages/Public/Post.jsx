@@ -78,7 +78,7 @@ export const Post = () => {
     ? `http://localhost:5000${rawCertDocUrl}`
     : rawCertDocUrl;
 
-  const portfolioUrl = `http://localhost:5174/#certifications`;
+  const portfolioUrl = `/portfolio/#certifications`;
 
   return (
     <article className="max-w-4xl mx-auto space-y-8 py-4">
@@ -154,11 +154,8 @@ export const Post = () => {
             )}
             <a
               href={portfolioUrl}
-              target="_blank"
-              rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1E3A8A] hover:bg-[#2563EB] text-white text-xs font-bold shadow transition-all"
             >
-              <ExternalLink className="w-3.5 h-3.5" />
               View All Credentials
             </a>
           </div>

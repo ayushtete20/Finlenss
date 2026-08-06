@@ -40,7 +40,7 @@ export const Footer = () => {
               Platform
             </h4>
             <ul className="space-y-2 text-xs font-medium text-[#0D47A1]/70">
-              <li><a href="http://localhost:5174" target="_blank" rel="noreferrer" className="hover:text-[#0D47A1] transition-colors flex items-center gap-1">Advisor Portfolio <Globe className="w-3 h-3 text-[#2196F3]" /></a></li>
+              <li><a href="/portfolio" className="hover:text-[#0D47A1] transition-colors flex items-center gap-1">Advisor Portfolio</a></li>
               <li>
                 <a
                   href="https://chat.whatsapp.com/K146aYYHkqLF7rAwEUNA1Y?s=cl&p=i&mlu=0&ilr=0"

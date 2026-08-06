@@ -36,8 +36,8 @@ export const Header = ({ onSearchChange, searchTerm }) => {
             <a href="#markets" className="hover:text-[#2196F3] transition-colors">
               Markets
             </a>
-            <a href="http://localhost:5174" target="_blank" rel="noreferrer" className="hover:text-[#2196F3] transition-colors flex items-center gap-1">
-              Portfolio <ExternalLink className="w-3 h-3" />
+            <a href="/portfolio" className="hover:text-[#2196F3] transition-colors flex items-center gap-1">
+              Portfolio
             </a>
           </nav>
 
@@ -99,8 +99,8 @@ export const Header = ({ onSearchChange, searchTerm }) => {
           <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="block py-2">
             Insights
           </Link>
-          <a href="http://localhost:5174" target="_blank" rel="noreferrer" className="block py-2 flex items-center gap-1">
-            Advisor Portfolio <ExternalLink className="w-3.5 h-3.5" />
+          <a href="/portfolio" className="block py-2 flex items-center gap-1">
+            Advisor Portfolio
           </a>
 
           {loggedIn ? (
