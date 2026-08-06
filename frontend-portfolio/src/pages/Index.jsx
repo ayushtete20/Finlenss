@@ -10,8 +10,7 @@ import Contact from '../components/Contact';
 import WhatsAppFloatingBtn from '../components/WhatsAppFloatingBtn';
 import { ExternalLink } from 'lucide-react';
 
-const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-const mainAppUrl = import.meta.env.VITE_MAIN_APP_URL || (isLocalSplitDev ? 'http://localhost:5173' : '/');
+
 
 export const Index = () => {
   return (
@@ -57,12 +56,12 @@ export const Index = () => {
           {/* Right Edge (CTA): Solid dark blue button */}
           <div className="flex items-center gap-2.5">
             <a
-              href={mainAppUrl}
-              target={isLocalSplitDev ? "_blank" : undefined}
-              rel={isLocalSplitDev ? "noreferrer" : undefined}
+              href="https://finlenss.com"
+              target="_blank"
+              rel="noreferrer"
               className="px-4 py-2.5 rounded-xl bg-[#1E3A8A] hover:bg-[#1d4ed8] text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5"
             >
-              MAIN BLOG PLATFORM {isLocalSplitDev && <ExternalLink className="w-3.5 h-3.5" />}
+              MAIN BLOG PLATFORM <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
         </div>
