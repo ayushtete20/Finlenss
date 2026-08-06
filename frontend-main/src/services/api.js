@@ -1,4 +1,5 @@
 import { supabase } from '../utils/supabaseClient';
+const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
 const baseUrl = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : (isLocalSplitDev ? 'http://localhost:5000/api' : '/api');
 
 // Helper to get stored auth token
@@ -320,7 +321,7 @@ export const deleteConsultation = async (id) => {
 };
 
 export const loginAdmin = async (password) => {
-  if (password === 'admin123' || password === process.env.VITE_ADMIN_PASSWORD) {
+  if (password === 'admin123' || password === import.meta.env.VITE_ADMIN_PASSWORD) {
     setAuthToken('supabase_admin_token_2026');
     return { success: true, token: 'supabase_admin_token_2026' };
   }
