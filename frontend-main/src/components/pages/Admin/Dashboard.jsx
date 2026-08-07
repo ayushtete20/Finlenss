@@ -1141,13 +1141,30 @@ export const Dashboard = () => {
 
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#90CAF9]">
-                <ClayButton variant="secondary" size="sm" type="button" onClick={() => setShowCertModal(false)}>
-                  Cancel
-                </ClayButton>
-                <ClayButton variant="primary" size="sm" type="submit">
-                  {editingCert ? 'Update Credential' : 'Save Certification'}
-                </ClayButton>
+              <div className="flex items-center justify-between gap-3 pt-4 border-t border-[#90CAF9]">
+                {editingCert ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const certToDelete = editingCert;
+                      setShowCertModal(false);
+                      setDeleteCertTarget(certToDelete);
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4 text-rose-600" />
+                    <span>Remove Certification</span>
+                  </button>
+                ) : <div />}
+
+                <div className="flex items-center gap-3">
+                  <ClayButton variant="secondary" size="sm" type="button" onClick={() => setShowCertModal(false)}>
+                    Cancel
+                  </ClayButton>
+                  <ClayButton variant="primary" size="sm" type="submit">
+                    {editingCert ? 'Update Credential' : 'Save Certification'}
+                  </ClayButton>
+                </div>
               </div>
             </form>
           </div>
