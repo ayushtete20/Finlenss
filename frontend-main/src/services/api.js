@@ -154,8 +154,27 @@ export const removeAuthToken = logoutAdmin;
 
 // --- SECTION 1: SUPABASE DIRECT SDK DATA FETCHING ---
 
+const getStoredCustomArticles = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const cached = localStorage.getItem('custom_articles_cache');
+    if (cached) return JSON.parse(cached);
+  } catch (e) {}
+  return null;
+};
+
+const setStoredCustomArticles = (articles) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('custom_articles_cache', JSON.stringify(articles));
+  } catch (e) {}
+};
+
+// --- SECTION 1: SUPABASE DIRECT SDK DATA FETCHING ---
+
 // Fetch Articles using Supabase SDK: supabase.from('articles').select('*')
 export const fetchArticles = async (params = {}) => {
+  let articles = null;
   try {
     let query = supabase.from('articles').select('*');
 
@@ -169,43 +188,85 @@ export const fetchArticles = async (params = {}) => {
     const { data, error } = await query.order('created_at', { ascending: false });
 
     if (!error && data && data.length > 0) {
-      return { articles: data };
+      articles = data;
     }
   } catch (err) {
     console.warn('Supabase fetchArticles error, using local fallback:', err);
   }
 
-  // Local fallback if Supabase is unreachable
-  try {
-    const query = new URLSearchParams();
-    if (params.category && params.category !== 'All') query.append('category', params.category);
-    if (params.search) query.append('search', params.search);
-    const data = await safeFetchJson(`${baseUrl}/blogs?${query.toString()}`);
-    if (data) return data;
-  } catch (e) {
-    console.warn('Local API fallback failed:', e);
+  if (!articles) {
+    try {
+      const query = new URLSearchParams();
+      if (params.category && params.category !== 'All') query.append('category', params.category);
+      if (params.search) query.append('search', params.search);
+      const data = await safeFetchJson(`${baseUrl}/blogs?${query.toString()}`);
+      if (data && data.articles) articles = data.articles;
+    } catch (e) {}
   }
 
-  return { articles: fallbackArticles };
+  if (!articles) {
+    articles = [...fallbackArticles];
+  }
+
+  // Merge local overrides from getStoredCustomArticles() if any exist
+  const localCache = getStoredCustomArticles();
+  if (localCache && Array.isArray(localCache)) {
+    const merged = articles.map(art => {
+      const match = localCache.find(c => String(c.id) === String(art.id));
+      return match ? { ...art, ...match } : art;
+    });
+    localCache.forEach(c => {
+      if (!merged.some(m => String(m.id) === String(c.id))) {
+        merged.unshift(c);
+      }
+    });
+    articles = merged;
+  }
+
+  if (params.category && params.category !== 'All') {
+    articles = articles.filter(a => a.category === params.category);
+  }
+  if (params.search) {
+    const q = params.search.toLowerCase();
+    articles = articles.filter(a => (a.title && a.title.toLowerCase().includes(q)) || (a.content && a.content.toLowerCase().includes(q)));
+  }
+
+  return { articles };
 };
 
 // Fetch Article by ID using Supabase SDK
 export const fetchArticleById = async (id) => {
+  let article = null;
+  const numericId = parseInt(id, 10);
+  const targetId = isNaN(numericId) ? id : numericId;
+
   try {
-    const { data, error } = await supabase.from('articles').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('articles').select('*').eq('id', targetId).single();
     if (!error && data) {
-      return { article: data };
+      article = data;
     }
   } catch (err) {
     console.warn('Supabase fetchArticleById error:', err);
   }
 
-  // Local fallback
-  const data = await safeFetchJson(`${baseUrl}/blogs/${id}`);
-  if (data) return data;
+  if (!article) {
+    const data = await safeFetchJson(`${baseUrl}/blogs/${id}`);
+    if (data && data.article) article = data.article;
+  }
 
-  const foundFallback = fallbackArticles.find(a => String(a.id) === String(id));
-  return { article: foundFallback || fallbackArticles[0] };
+  if (!article) {
+    article = fallbackArticles.find(a => String(a.id) === String(id));
+  }
+
+  const localCache = getStoredCustomArticles();
+  if (localCache && Array.isArray(localCache)) {
+    const match = localCache.find(c => String(c.id) === String(id));
+    if (match) {
+      article = { ...article, ...match };
+    }
+  }
+
+  return { article: article || fallbackArticles[0] };
 };
 
 // Fetch Categories using Supabase SDK: supabase.from('categories').select('*')
@@ -290,6 +351,18 @@ export const fetchConsultations = async () => {
 
 // Create / Modify methods
 export const createArticle = async (articleData) => {
+  const newId = Date.now();
+  const newArticle = { id: newId, views: 0, is_trending: 0, created_at: new Date().toISOString(), ...articleData };
+
+  // 1. In-memory sync
+  fallbackArticles.unshift(newArticle);
+
+  // 2. LocalStorage sync
+  let localCache = getStoredCustomArticles() || [...fallbackArticles];
+  localCache.unshift(newArticle);
+  setStoredCustomArticles(localCache);
+
+  // 3. Remote Supabase sync
   try {
     const { data, error } = await supabase.from('articles').insert([articleData]).select().single();
     if (!error && data) return { message: 'Article created', article: data };
@@ -303,14 +376,38 @@ export const createArticle = async (articleData) => {
   });
   if (resData) return resData;
 
-  return { message: 'Article created', article: { id: Date.now(), ...articleData } };
+  return { message: 'Article created', article: newArticle };
 };
 
 export const updateArticle = async (id, articleData) => {
+  const numericId = parseInt(id, 10);
+  const targetId = isNaN(numericId) ? id : numericId;
+
+  // 1. In-memory fallbackArticles sync
+  const fallbackIdx = fallbackArticles.findIndex(a => String(a.id) === String(id));
+  if (fallbackIdx !== -1) {
+    fallbackArticles[fallbackIdx] = { ...fallbackArticles[fallbackIdx], ...articleData, id: targetId };
+  }
+
+  // 2. LocalStorage sync
+  let localCache = getStoredCustomArticles() || [...fallbackArticles];
+  const cacheIdx = localCache.findIndex(a => String(a.id) === String(id));
+  if (cacheIdx !== -1) {
+    localCache[cacheIdx] = { ...localCache[cacheIdx], ...articleData, id: targetId };
+  } else {
+    localCache.unshift({ id: targetId, ...articleData });
+  }
+  setStoredCustomArticles(localCache);
+
+  // 3. Remote Supabase sync
   try {
-    const { data, error } = await supabase.from('articles').update(articleData).eq('id', id).select().single();
-    if (!error && data) return { message: 'Article updated', article: data };
-  } catch (e) {}
+    const { data, error } = await supabase.from('articles').update(articleData).eq('id', targetId).select();
+    if (!error && data && data.length > 0) {
+      return { message: 'Article updated', article: data[0] };
+    }
+  } catch (e) {
+    console.warn('Supabase updateArticle error:', e);
+  }
 
   const token = getAuthToken();
   const resData = await safeFetchJson(`${baseUrl}/blogs/${id}`, {
@@ -320,12 +417,25 @@ export const updateArticle = async (id, articleData) => {
   });
   if (resData) return resData;
 
-  return { message: 'Article updated', article: { id, ...articleData } };
+  return { message: 'Article updated', article: { id: targetId, ...articleData } };
 };
 
 export const deleteArticle = async (id) => {
+  const numericId = parseInt(id, 10);
+  const targetId = isNaN(numericId) ? id : numericId;
+
+  // 1. In-memory fallbackArticles sync
+  const fallbackIdx = fallbackArticles.findIndex(a => String(a.id) === String(id));
+  if (fallbackIdx !== -1) fallbackArticles.splice(fallbackIdx, 1);
+
+  // 2. LocalStorage sync
+  let localCache = getStoredCustomArticles() || [...fallbackArticles];
+  localCache = localCache.filter(a => String(a.id) !== String(id));
+  setStoredCustomArticles(localCache);
+
+  // 3. Remote Supabase sync
   try {
-    const { error } = await supabase.from('articles').delete().eq('id', id);
+    const { error } = await supabase.from('articles').delete().eq('id', targetId);
     if (!error) return { message: 'Article deleted' };
   } catch (e) {}
 
