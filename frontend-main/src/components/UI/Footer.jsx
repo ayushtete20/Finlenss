@@ -1,5 +1,6 @@
 import React from 'react';
-import { TrendingUp, Globe, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { TrendingUp, Globe, Shield, ExternalLink } from 'lucide-react';
 
 export const Footer = () => {
   return (
@@ -8,14 +9,14 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           {/* Brand Col */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-7 h-7 rounded border-2 border-[#0D47A1] flex items-center justify-center text-[#0D47A1] font-bold">
+            <Link to="/" className="flex items-center gap-2.5 mb-4 group">
+              <div className="w-7 h-7 rounded border-2 border-[#0D47A1] flex items-center justify-center text-[#0D47A1] font-bold group-hover:bg-[#0D47A1] group-hover:text-white transition-colors">
                 <TrendingUp className="w-4 h-4 stroke-[2.5]" />
               </div>
               <span className="text-xl font-bold text-[#0D47A1] font-serif">
                 Finlenss.
               </span>
-            </div>
+            </Link>
             <p className="text-xs text-[#0D47A1]/70 leading-relaxed mb-4">
               Institutional financial analysis, micro-investing trends, and personal wealth psychology.
             </p>
@@ -27,10 +28,10 @@ export const Footer = () => {
               Topics
             </h4>
             <ul className="space-y-2 text-xs font-medium text-[#0D47A1]/70">
-              <li><a href="/" className="hover:text-[#0D47A1] transition-colors">Macroeconomics</a></li>
-              <li><a href="/" className="hover:text-[#0D47A1] transition-colors">Decentralized Credit</a></li>
-              <li><a href="/" className="hover:text-[#0D47A1] transition-colors">Micro-Investing</a></li>
-              <li><a href="/" className="hover:text-[#0D47A1] transition-colors">Personal Finance</a></li>
+              <li><Link to="/" className="hover:text-[#0D47A1] transition-colors">Macroeconomics</Link></li>
+              <li><Link to="/" className="hover:text-[#0D47A1] transition-colors">Decentralized Credit</Link></li>
+              <li><Link to="/" className="hover:text-[#0D47A1] transition-colors">Micro-Investing</Link></li>
+              <li><Link to="/" className="hover:text-[#0D47A1] transition-colors">Personal Finance</Link></li>
             </ul>
           </div>
 
@@ -40,7 +41,16 @@ export const Footer = () => {
               Platform
             </h4>
             <ul className="space-y-2 text-xs font-medium text-[#0D47A1]/70">
-              <li><a href="/portfolio" className="hover:text-[#0D47A1] transition-colors flex items-center gap-1">Advisor Portfolio</a></li>
+              <li>
+                <a
+                  href="https://finlenss-portfolio-aayush-6845.vercel.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#0D47A1] transition-colors flex items-center gap-1"
+                >
+                  Advisor Portfolio <ExternalLink className="w-3 h-3 ml-0.5 opacity-80" />
+                </a>
+              </li>
               <li>
                 <a
                   href="https://chat.whatsapp.com/K146aYYHkqLF7rAwEUNA1Y?s=cl&p=i&mlu=0&ilr=0"
@@ -54,7 +64,7 @@ export const Footer = () => {
                   WhatsApp Community
                 </a>
               </li>
-              <li><a href="/admin/login" className="hover:text-[#0D47A1] transition-colors">Admin Portal</a></li>
+              <li><Link to="/admin/login" className="hover:text-[#0D47A1] transition-colors">Admin Portal</Link></li>
             </ul>
           </div>
 

@@ -9,7 +9,7 @@
       "destination": "https://finlenss-portfolio-aayush-6845.vercel.app/:match*"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]

@@ -36,8 +36,13 @@ export const Header = ({ onSearchChange, searchTerm }) => {
             <a href="#markets" className="hover:text-[#2196F3] transition-colors">
               Markets
             </a>
-            <a href="/portfolio" className="hover:text-[#2196F3] transition-colors flex items-center gap-1">
-              Portfolio
+            <a
+              href="https://finlenss-portfolio-aayush-6845.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[#2196F3] transition-colors flex items-center gap-1"
+            >
+              Portfolio <ExternalLink className="w-3 h-3 ml-0.5 opacity-80" />
             </a>
           </nav>
 
@@ -99,7 +104,13 @@ export const Header = ({ onSearchChange, searchTerm }) => {
           <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="block py-2">
             Insights
           </Link>
-          <a href="/portfolio" onClick={() => setIsMobileMenuOpen(false)} className="block py-1.5 leading-tight">
+          <a
+            href="https://finlenss-portfolio-aayush-6845.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="block py-1.5 leading-tight hover:text-[#2196F3] transition-colors"
+          >
             <span className="block font-bold">ADVISOR</span>
             <span className="block font-bold text-[#2196F3]">PORTFOLIO</span>
           </a>

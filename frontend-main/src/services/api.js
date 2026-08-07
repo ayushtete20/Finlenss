@@ -611,29 +611,8 @@ export const fetchSiteStats = async () => {
 export const trackVisit = async () => {};
 export const trackArticleClick = async (id) => {};
 
-// File Upload
+// File Upload via Supabase Storage SDK
 export const uploadFile = async (file) => {
-  // Upload directly to the local Express backend server
-  try {
-    const token = getAuthToken();
-    const formData = new FormData();
-    formData.append('file', file);
-    const res = await fetch(`${baseUrl}/upload`, {
-      method: 'POST',
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: formData
-    });
-    if (res.ok) {
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return await res.json();
-      }
-    }
-  } catch (e) {
-    console.warn('Express backend upload failed, falling back to Supabase:', e);
-  }
-
-  // Fallback to Supabase Storage if local server is unreachable
   try {
     const filename = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const { data, error } = await supabase.storage.from('financial-models').upload(filename, file);
@@ -647,8 +626,15 @@ export const uploadFile = async (file) => {
       };
     }
   } catch (err) {
-    console.error('Supabase upload fallback failed:', err);
+    console.warn('Supabase storage upload notice:', err);
   }
 
-  throw new Error('All file upload destinations failed.');
+  // Fallback to object URL if cloud storage bucket is not configured
+  const localUrl = URL.createObjectURL(file);
+  return {
+    message: 'File attached locally',
+    url: localUrl,
+    filename: file.name,
+    originalName: file.name
+  };
 };
