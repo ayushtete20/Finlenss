@@ -37,8 +37,8 @@ const defaultCertifications = [
     article_title: 'Equity Valuation & Financial Modelling — Dabur India 3-Statement Model',
     excel_url: '/Dabur_India_3_Statement_Financial_Model.xlsx',
     excel_name: 'Dabur_India_3_Statement_Financial_Model.xlsx',
-    cert_doc_url: '/uploads/ECC-CEH-Certificate_page-0001__1__1785995910796.jpg',
-    cert_doc_name: 'CEH_Certificate.jpg',
+    cert_doc_url: null,
+    cert_doc_name: null,
     article_content: `Completed a 3-Statement Financial Model of Dabur India, integrating the Income Statement, Balance Sheet, and Cash Flow Statement to forecast the company's financial performance.`,
     insights: [
       "Revenue growth remains steady, supported by the strength of Dabur's FMCG portfolio.",
