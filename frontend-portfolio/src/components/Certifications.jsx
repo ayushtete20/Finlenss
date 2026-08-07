@@ -67,8 +67,7 @@ export const Certifications = () => {
   useEffect(() => {
     const loadCerts = async () => {
       try {
-        const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-        const apiTarget = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/certifications` : (isLocalSplitDev ? 'http://localhost:5000/api/certifications' : '/api/certifications');
+        const apiTarget = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/certifications` : '/api/certifications';
         const response = await fetch(apiTarget);
         const data = await response.json();
         if (data && data.certifications && data.certifications.length > 0) {
@@ -119,9 +118,9 @@ export const Certifications = () => {
             const Icon = cert.icon === 'BadgeCheck' ? BadgeCheck : Award;
             // Support both old attachment_url field and new separate fields
             const rawExcelUrl = cert.excel_url || cert.attachment_url || null;
-            const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-            const backendUrl = import.meta.env.VITE_API_URL || (isLocalSplitDev ? 'http://localhost:5000' : '');
-            const mainAppUrl = import.meta.env.VITE_MAIN_APP_URL || (isLocalSplitDev ? 'http://localhost:5173' : '');
+            const backendUrl = import.meta.env.VITE_API_URL || '';
+            const rawMainAppUrl = import.meta.env.VITE_MAIN_APP_URL || 'https://finlenss.com';
+            const mainAppUrl = rawMainAppUrl.replace(/^http:\/\/localhost:\d+/, 'https://finlenss.com');
 
             const excelUrl = rawExcelUrl && rawExcelUrl.startsWith('/uploads')
               ? `${backendUrl}${rawExcelUrl}`
@@ -132,8 +131,12 @@ export const Certifications = () => {
               ? `${backendUrl}${rawCertDocUrl}`
               : rawCertDocUrl;
 
-            const hasAsset = Boolean(excelUrl || certDocUrl || cert.article_id || cert.article_content);
-            const blogUrl = cert.article_id ? `${mainAppUrl}/post/${cert.article_id}` : null;
+            let blogUrl = cert.blogUrl || cert.blog_url || (cert.article_id ? `${mainAppUrl}/post/${cert.article_id}` : null);
+            if (blogUrl && typeof blogUrl === 'string') {
+              blogUrl = blogUrl.replace(/^http:\/\/localhost:\d+/, mainAppUrl);
+            }
+
+            const hasAsset = Boolean(excelUrl || certDocUrl || cert.article_id || cert.article_content || blogUrl);
 
             // Detect if cert doc is an image
             const isImage = certDocUrl && /\.(jpg|jpeg|png|gif|webp)$/i.test(certDocUrl);
@@ -299,42 +302,39 @@ export const Certifications = () => {
                   href={selectedCert.certDocUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-[#1E3A8A] text-white text-[11px] font-bold hover:bg-[#2563EB] transition-all shrink-0"
+                  className="px-3 py-1.5 rounded-lg bg-[#1E3A8A] text-white text-[11px] font-bold hover:bg-[#2563EB] hover:scale-105 active:scale-95 transition-all duration-200 shrink-0"
                 >
                   View PDF
                 </a>
               </div>
             )}
 
-            {/* Footer — Excel download via Supabase Storage + Article link */}
+            {/* Footer — Excel download via standard HTML <a> tag + Article link */}
             {(selectedCert.excelUrl || selectedCert.article_id) && (
               <div className="pt-4 border-t border-[#BFDBFE] flex flex-col sm:flex-row items-center gap-3">
                 {selectedCert.excelUrl && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        const filename = selectedCert.excel_name || 'Dabur_Model.xlsx';
-                        const { data } = supabase.storage.from('financial-models').getPublicUrl(filename);
-                        const downloadUrl = data?.publicUrl || selectedCert.excelUrl;
-                        window.open(downloadUrl, '_blank');
-                      } catch (err) {
-                        window.open(selectedCert.excelUrl, '_blank');
-                      }
-                    }}
-                    className="w-full sm:w-auto px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  <a
+                    href={(() => {
+                      const filename = selectedCert.excel_name || 'Dabur_Model.xlsx';
+                      const { data } = supabase.storage.from('financial-models').getPublicUrl(filename);
+                      return data?.publicUrl || selectedCert.excelUrl;
+                    })()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download={selectedCert.excel_name || 'Dabur_Model.xlsx'}
+                    className="w-full sm:w-auto px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <FileSpreadsheet className="w-4 h-4" />
                     <Download className="w-4 h-4 text-white" />
                     <span>Download Financial Model (.xlsx)</span>
-                  </button>
+                  </a>
                 )}
                 {selectedCert.blogUrl && (
                   <a
                     href={selectedCert.blogUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto px-5 py-3 rounded-xl bg-[#1E3A8A] hover:bg-[#2563EB] text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md"
+                    className="w-full sm:w-auto px-5 py-3 rounded-xl bg-[#1E3A8A] hover:bg-[#2563EB] active:scale-95 text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:scale-105 cursor-pointer"
                   >
                     <ExternalLink className="w-4 h-4" />
                     <span>Read Full Article on Blog</span>

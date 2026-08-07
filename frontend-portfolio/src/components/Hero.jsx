@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, TrendingUp, Sparkles, Target, Cpu, CheckCircle2, ArrowRight } from 'lucide-react';
 
@@ -48,7 +49,7 @@ export const Hero = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden py-16 md:py-24 bg-[#EAF2F8]">
+    <section id="about" className="relative overflow-hidden py-16 md:py-24 bg-[#EAF2F8]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* 2-Column Desktop Split Screen */}
@@ -140,13 +141,13 @@ export const Hero = () => {
 
             {/* Action CTA Button */}
             <div className="pt-4">
-              <a
-                href="#experience-education"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1E3A8A] hover:bg-[#1d4ed8] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all duration-300"
+              <Link
+                to="/experience-education"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1E3A8A] hover:bg-[#1d4ed8] active:scale-95 text-white text-xs font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300"
               >
                 <span>Learn More</span>
                 <ArrowRight className="w-4 h-4" />
-              </a>
+              </Link>
             </div>
           </motion.div>
 

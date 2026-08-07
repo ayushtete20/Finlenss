@@ -1,6 +1,20 @@
 import { supabase } from '../utils/supabaseClient';
-const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-const baseUrl = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : (isLocalSplitDev ? 'http://localhost:5000/api' : '/api');
+const baseUrl = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api';
+
+const safeFetchJson = async (url, options = {}) => {
+  try {
+    const res = await fetch(url, options);
+    if (res.ok) {
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await res.json();
+      }
+    }
+  } catch (e) {
+    console.warn(`Fetch error for ${url}:`, e);
+  }
+  return null;
+};
 
 // --- FALLBACK INITIAL SEED DATA FOR PRODUCTION ---
 export const fallbackArticles = [
@@ -105,31 +119,38 @@ export const fallbackCertifications = [
     cert_doc_name: 'CEH_Certificate.jpg',
     status: 'Verified'
   },
-  { id: 2, title: 'Financial modelling and analysis', issuer: 'PwC India', dates: 'Verified Credential', icon: 'BadgeCheck', status: 'Verified' },
-  { id: 3, title: 'Microsoft Excel 2013 Certification', issuer: 'Great Learning', dates: 'Issued Jul 2022 – Expired Jul 2022', icon: 'Award', status: 'Verified' },
-  { id: 4, title: 'Fundamentals accounting', issuer: 'National Skill Development Corporation', dates: 'Issued Jun 2026', icon: 'BadgeCheck', status: 'Verified' },
-  { id: 5, title: 'NISM Certifications (NISM-securities market foundation certification)', issuer: 'National Institute of Securities Markets (NISM)', dates: 'Issued Apr 2026 – Expires Apr 2029', icon: 'BadgeCheck', status: 'Verified' },
-  { id: 6, title: 'UpGrad (Financial Analysis / Working Capital Management)', issuer: 'UpGrad', dates: 'Issued Feb 2026 – Expires Mar 2028', icon: 'Award', status: 'Verified' },
-  { id: 7, title: 'skill india certificate for finance', issuer: 'Government of India', dates: 'Issued Feb 2026 – Expired Jun 2026', icon: 'Award', status: 'Verified' }
+  { id: 2, title: 'Financial modelling and analysis', issuer: 'PwC India', dates: 'Verified Credential', icon: 'BadgeCheck' },
+  { id: 3, title: 'Microsoft Excel 2013 Certification', issuer: 'Great Learning', dates: 'Issued Jul 2022 – Expired Jul 2022', icon: 'Award' },
+  { id: 4, title: 'Fundamentals accounting', issuer: 'National Skill Development Corporation', dates: 'Issued Jun 2026', icon: 'BadgeCheck' },
+  { id: 5, title: 'NISM Certifications (NISM-securities market foundation certification)', issuer: 'National Institute of Securities Markets (NISM)', dates: 'Issued Apr 2026 – Expires Apr 2029', icon: 'BadgeCheck' },
+  { id: 6, title: 'UpGrad (Financial Analysis / Working Capital Management)', issuer: 'UpGrad', dates: 'Issued Feb 2026 – Expires Mar 2028', icon: 'Award' },
+  { id: 7, title: 'skill india certificate for finance', issuer: 'Government of India', dates: 'Issued Feb 2026 – Expired Jun 2026', icon: 'Award' }
 ];
 
 
-// Helper to get stored auth token
-export const getAuthToken = () => {
-  return localStorage.getItem('financial_admin_token');
+const getAuthToken = () => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('blog_platform_admin_token') || sessionStorage.getItem('blog_platform_admin_token');
 };
 
-export const setAuthToken = (token) => {
-  localStorage.setItem('financial_admin_token', token);
-};
-
-export const removeAuthToken = () => {
-  localStorage.removeItem('financial_admin_token');
+const setAuthToken = (token) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('blog_platform_admin_token', token);
+  }
 };
 
 export const isAdminLoggedIn = () => {
-  return !!getAuthToken();
+  return Boolean(getAuthToken());
 };
+
+export const logoutAdmin = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('blog_platform_admin_token');
+    sessionStorage.removeItem('blog_platform_admin_token');
+  }
+};
+
+export const removeAuthToken = logoutAdmin;
 
 // --- SECTION 1: SUPABASE DIRECT SDK DATA FETCHING ---
 
@@ -159,8 +180,8 @@ export const fetchArticles = async (params = {}) => {
     const query = new URLSearchParams();
     if (params.category && params.category !== 'All') query.append('category', params.category);
     if (params.search) query.append('search', params.search);
-    const res = await fetch(`${baseUrl}/blogs?${query.toString()}`);
-    if (res.ok) return await res.json();
+    const data = await safeFetchJson(`${baseUrl}/blogs?${query.toString()}`);
+    if (data) return data;
   } catch (e) {
     console.warn('Local API fallback failed:', e);
   }
@@ -180,10 +201,8 @@ export const fetchArticleById = async (id) => {
   }
 
   // Local fallback
-  try {
-    const res = await fetch(`${baseUrl}/blogs/${id}`);
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const data = await safeFetchJson(`${baseUrl}/blogs/${id}`);
+  if (data) return data;
 
   const foundFallback = fallbackArticles.find(a => String(a.id) === String(id));
   return { article: foundFallback || fallbackArticles[0] };
@@ -200,10 +219,8 @@ export const fetchCategories = async () => {
     console.warn('Supabase fetchCategories error:', err);
   }
 
-  try {
-    const res = await fetch(`${baseUrl}/blogs/categories/all`);
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const data = await safeFetchJson(`${baseUrl}/blogs/categories/all`);
+  if (data) return data;
 
   return { categories: fallbackCategories };
 };
@@ -223,15 +240,11 @@ export const fetchCertificationByArticleId = async (articleId) => {
     console.warn('Supabase fetchCertificationByArticleId error:', err);
   }
 
-  try {
-    const res = await fetch(`${baseUrl}/certifications`);
-    if (res.ok) {
-      const data = await res.json();
-      const certs = data.certifications || [];
-      const matched = certs.find(c => String(c.article_id) === String(articleId));
-      if (matched) return { certification: matched };
-    }
-  } catch (e) {}
+  const data = await safeFetchJson(`${baseUrl}/certifications`);
+  if (data && data.certifications) {
+    const matched = data.certifications.find(c => String(c.article_id) === String(articleId));
+    if (matched) return { certification: matched };
+  }
 
   const matchedCert = fallbackCertifications.find(c => String(c.article_id) === String(articleId));
   return { certification: matchedCert || fallbackCertifications[0] };
@@ -249,10 +262,8 @@ export const fetchCertifications = async () => {
     console.warn('Supabase fetchCertifications error:', err);
   }
 
-  try {
-    const res = await fetch(`${baseUrl}/certifications`);
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const data = await safeFetchJson(`${baseUrl}/certifications`);
+  if (data) return data;
 
   return { certifications: fallbackCertifications };
 };
@@ -268,13 +279,11 @@ export const fetchConsultations = async () => {
     console.warn('Supabase fetchConsultations error:', err);
   }
 
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`${baseUrl}/admin/consultations`, {
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
-    });
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const token = getAuthToken();
+  const data = await safeFetchJson(`${baseUrl}/admin/consultations`, {
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  });
+  if (data) return data;
 
   return { consultations: [] };
 };
@@ -286,29 +295,32 @@ export const createArticle = async (articleData) => {
     if (!error && data) return { message: 'Article created', article: data };
   } catch (e) {}
 
-  // Local fallback
   const token = getAuthToken();
-  const res = await fetch(`${baseUrl}/blogs`, {
+  const resData = await safeFetchJson(`${baseUrl}/blogs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(articleData)
   });
-  return await res.json();
+  if (resData) return resData;
+
+  return { message: 'Article created', article: { id: Date.now(), ...articleData } };
 };
 
 export const updateArticle = async (id, articleData) => {
   try {
     const { data, error } = await supabase.from('articles').update(articleData).eq('id', id).select().single();
-    if (!error) return { message: 'Article updated', article: data };
+    if (!error && data) return { message: 'Article updated', article: data };
   } catch (e) {}
 
   const token = getAuthToken();
-  const res = await fetch(`${baseUrl}/blogs/${id}`, {
+  const resData = await safeFetchJson(`${baseUrl}/blogs/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(articleData)
   });
-  return await res.json();
+  if (resData) return resData;
+
+  return { message: 'Article updated', article: { id, ...articleData } };
 };
 
 export const deleteArticle = async (id) => {
@@ -317,14 +329,13 @@ export const deleteArticle = async (id) => {
     if (!error) return { message: 'Article deleted' };
   } catch (e) {}
 
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`${baseUrl}/blogs/${id}`, {
-      method: 'DELETE',
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
-    });
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const token = getAuthToken();
+  const resData = await safeFetchJson(`${baseUrl}/blogs/${id}`, {
+    method: 'DELETE',
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  });
+  if (resData) return resData;
+
   return { message: 'Article deleted' };
 };
 
@@ -334,15 +345,13 @@ export const createCertification = async (certData) => {
     if (!error && data) return { message: 'Certification created', certification: data };
   } catch (e) {}
 
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`${baseUrl}/admin/certifications`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify(certData)
-    });
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const token = getAuthToken();
+  const resData = await safeFetchJson(`${baseUrl}/admin/certifications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify(certData)
+  });
+  if (resData) return resData;
   return { message: 'Certification created', certification: certData };
 };
 
@@ -352,15 +361,13 @@ export const updateCertification = async (id, certData) => {
     if (!error) return { message: 'Certification updated', certification: data || certData };
   } catch (e) {}
 
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`${baseUrl}/admin/certifications/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify(certData)
-    });
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const token = getAuthToken();
+  const resData = await safeFetchJson(`${baseUrl}/admin/certifications/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify(certData)
+  });
+  if (resData) return resData;
   return { message: 'Certification updated' };
 };
 
@@ -370,14 +377,12 @@ export const deleteCertification = async (id) => {
     if (!error) return { message: 'Certification deleted' };
   } catch (e) {}
 
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`${baseUrl}/admin/certifications/${id}`, {
-      method: 'DELETE',
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
-    });
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const token = getAuthToken();
+  const resData = await safeFetchJson(`${baseUrl}/admin/certifications/${id}`, {
+    method: 'DELETE',
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  });
+  if (resData) return resData;
   return { message: 'Certification deleted' };
 };
 
@@ -387,15 +392,13 @@ export const toggleArticleTrending = async (id, isTrending) => {
     if (!error) return { message: 'Updated' };
   } catch (e) {}
 
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`${baseUrl}/blogs/${id}/trending`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify({ is_trending: isTrending })
-    });
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const token = getAuthToken();
+  const resData = await safeFetchJson(`${baseUrl}/blogs/${id}/trending`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ is_trending: isTrending })
+  });
+  if (resData) return resData;
   return { message: 'Updated' };
 };
 
@@ -405,15 +408,13 @@ export const createCategory = async (name) => {
     if (!error) return { message: 'Category created', category: data };
   } catch (e) {}
 
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`${baseUrl}/blogs/categories`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify({ name })
-    });
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const token = getAuthToken();
+  const resData = await safeFetchJson(`${baseUrl}/blogs/categories`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ name })
+  });
+  if (resData) return resData;
   return { message: 'Category created' };
 };
 
@@ -423,14 +424,12 @@ export const deleteCategory = async (id) => {
     if (!error) return { message: 'Category deleted' };
   } catch (e) {}
 
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`${baseUrl}/blogs/categories/${id}`, {
-      method: 'DELETE',
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
-    });
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const token = getAuthToken();
+  const resData = await safeFetchJson(`${baseUrl}/blogs/categories/${id}`, {
+    method: 'DELETE',
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  });
+  if (resData) return resData;
   return { message: 'Category deleted' };
 };
 
@@ -440,15 +439,13 @@ export const updateConsultationStatus = async (id, status) => {
     if (!error) return { message: 'Status updated' };
   } catch (e) {}
 
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`${baseUrl}/admin/consultations/${id}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify({ status })
-    });
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const token = getAuthToken();
+  const resData = await safeFetchJson(`${baseUrl}/admin/consultations/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ status })
+  });
+  if (resData) return resData;
   return { message: 'Status updated' };
 };
 
@@ -458,14 +455,12 @@ export const deleteConsultation = async (id) => {
     if (!error) return { message: 'Consultation deleted' };
   } catch (e) {}
 
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`${baseUrl}/admin/consultations/${id}`, {
-      method: 'DELETE',
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
-    });
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const token = getAuthToken();
+  const resData = await safeFetchJson(`${baseUrl}/admin/consultations/${id}`, {
+    method: 'DELETE',
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  });
+  if (resData) return resData;
   return { message: 'Consultation deleted' };
 };
 
@@ -475,18 +470,15 @@ export const loginAdmin = async (password) => {
     return { success: true, token: 'supabase_admin_token_2026' };
   }
 
-  try {
-    const res = await fetch(`${baseUrl}/admin/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.token) setAuthToken(data.token);
-      return data;
-    }
-  } catch (e) {}
+  const resData = await safeFetchJson(`${baseUrl}/admin/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password })
+  });
+  if (resData) {
+    if (resData.token) setAuthToken(resData.token);
+    return resData;
+  }
   return { success: false, error: 'Invalid admin password' };
 };
 
@@ -500,10 +492,8 @@ export const fetchSiteStats = async () => {
     }
   } catch (e) {}
 
-  try {
-    const res = await fetch(`${baseUrl}/blogs/stats/summary`);
-    if (res.ok) return await res.json();
-  } catch (e) {}
+  const resData = await safeFetchJson(`${baseUrl}/blogs/stats/summary`);
+  if (resData) return resData;
 
   return { total_articles: 0, total_certifications: 0, total_consultations: 0 };
 };
@@ -524,8 +514,10 @@ export const uploadFile = async (file) => {
       body: formData
     });
     if (res.ok) {
-      const data = await res.json();
-      return data;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await res.json();
+      }
     }
   } catch (e) {
     console.warn('Express backend upload failed, falling back to Supabase:', e);

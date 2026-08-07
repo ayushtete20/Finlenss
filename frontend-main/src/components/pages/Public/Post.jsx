@@ -68,8 +68,7 @@ export const Post = () => {
     );
   }
 
-  const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-  const backendUrl = import.meta.env.VITE_API_URL || (isLocalSplitDev ? 'http://localhost:5000' : '');
+  const backendUrl = import.meta.env.VITE_API_URL || '';
 
   const rawExcelUrl = linkedCert?.excel_url || linkedCert?.attachment_url || null;
   const excelUrl = rawExcelUrl && rawExcelUrl.startsWith('/uploads')

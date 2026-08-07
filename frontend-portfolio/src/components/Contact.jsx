@@ -31,8 +31,7 @@ export const Contact = () => {
       if (error) {
         console.warn('Supabase insertion notice, using API fallback:', error.message);
         // Fallback to Express backend if Supabase credentials are placeholder
-        const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-        const baseUrl = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : (isLocalSplitDev ? 'http://localhost:5000/api' : '/api');
+        const baseUrl = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api';
         await fetch(`${baseUrl}/consultations`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -96,7 +95,7 @@ export const Contact = () => {
                   Tushar Singh
                 </h3>
                 <p className="text-xs text-[#2563EB] font-bold uppercase tracking-widest mt-1">
-                  Legal & Financial Advisory
+                  Legal &amp; Financial Advisory
                 </p>
               </div>
 
@@ -112,7 +111,14 @@ export const Contact = () => {
                   </div>
                   <div>
                     <span className="block text-[10px] text-[#475569] uppercase font-bold tracking-wider">Direct Email</span>
-                    <span className="text-xs font-bold text-[#1E3A8A]">tusharsingh@gmail.com</span>
+                    <a
+                      href="mailto:tusharsingh@gmail.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-[#1E3A8A] hover:text-[#2563EB] hover:scale-105 inline-block transition-all duration-200"
+                    >
+                      tusharsingh@gmail.com
+                    </a>
                   </div>
                 </div>
 

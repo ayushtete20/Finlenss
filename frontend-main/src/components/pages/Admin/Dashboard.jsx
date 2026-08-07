@@ -21,8 +21,7 @@ import {
 import { Plus, Edit3, Trash2, Search, Eye, FileText, BarChart3, AlertCircle, Sparkles, CheckCircle2, TrendingUp, Users, Flame, FolderPlus, Tag, Calendar, Mail, Phone, MessageSquare, Clock, Filter, Inbox, ShieldCheck, Award, FileSpreadsheet, Upload, Paperclip, BadgeCheck, ExternalLink, X, Database } from 'lucide-react';
 import ClayButton from '../../UI/ClayButton';
 
-const isLocalSplitDev = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '5174');
-const backendUrl = import.meta.env.VITE_API_URL || (isLocalSplitDev ? 'http://localhost:5000' : '');
+const backendUrl = import.meta.env.VITE_API_URL || '';
 
 export const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('articles'); // 'articles' | 'consultations' | 'certifications'
