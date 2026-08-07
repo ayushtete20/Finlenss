@@ -119,8 +119,7 @@ export const Certifications = () => {
             // Support both old attachment_url field and new separate fields
             const rawExcelUrl = cert.excel_url || cert.attachment_url || null;
             const backendUrl = import.meta.env.VITE_API_URL || '';
-            const rawMainAppUrl = import.meta.env.VITE_MAIN_APP_URL || 'https://finlenss.com';
-            const mainAppUrl = rawMainAppUrl.replace(/^http:\/\/localhost:\d+/, 'https://finlenss.com');
+            const mainAppUrl = 'https://finlenss.com';
 
             const excelUrl = rawExcelUrl && rawExcelUrl.startsWith('/uploads')
               ? `${backendUrl}${rawExcelUrl}`
@@ -131,9 +130,17 @@ export const Certifications = () => {
               ? `${backendUrl}${rawCertDocUrl}`
               : rawCertDocUrl;
 
-            let blogUrl = cert.blogUrl || cert.blog_url || (cert.article_id ? `${mainAppUrl}/post/${cert.article_id}` : null);
-            if (blogUrl && typeof blogUrl === 'string') {
-              blogUrl = blogUrl.replace(/^http:\/\/localhost:\d+/, mainAppUrl);
+            let blogUrl = cert.blogUrl || cert.blog_url;
+            if (cert.article_id) {
+              blogUrl = `${mainAppUrl}/post/${cert.article_id}`;
+            } else if (blogUrl && typeof blogUrl === 'string') {
+              if (blogUrl.startsWith('/')) {
+                blogUrl = `${mainAppUrl}${blogUrl}`;
+              } else {
+                blogUrl = blogUrl.replace(/^http:\/\/localhost:\d+/, mainAppUrl);
+              }
+            } else {
+              blogUrl = `${mainAppUrl}/post/1`;
             }
 
             const hasAsset = Boolean(excelUrl || certDocUrl || cert.article_id || cert.article_content || blogUrl);

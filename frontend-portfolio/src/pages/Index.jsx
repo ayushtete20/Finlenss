@@ -67,7 +67,7 @@ export const Index = () => {
           {/* Right Edge (CTA): Solid dark blue button */}
           <div className="flex items-center gap-2.5">
             <a
-              href={(import.meta.env.VITE_MAIN_APP_URL || 'https://finlenss.com').replace(/^http:\/\/localhost:\d+/, 'https://finlenss.com')}
+              href="https://finlenss.com"
               target="_blank"
               rel="noopener noreferrer"
               className="px-4 py-2.5 rounded-xl bg-[#1E3A8A] hover:bg-[#1d4ed8] active:scale-95 text-white text-xs font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-1.5 cursor-pointer"
