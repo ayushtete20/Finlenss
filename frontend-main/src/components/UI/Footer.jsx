@@ -43,12 +43,10 @@ export const Footer = () => {
             <ul className="space-y-2 text-xs font-medium text-[#0D47A1]/70">
               <li>
                 <a
-                  href="https://finlenss-portfolio-aayush-6845.vercel.app"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-[#0D47A1] transition-colors flex items-center gap-1"
+                  href="#portfolio"
+                  className="hover:text-[#0D47A1] cursor-pointer transition-colors"
                 >
-                  Advisor Portfolio <ExternalLink className="w-3 h-3 ml-0.5 opacity-80" />
+                  Advisor Portfolio
                 </a>
               </li>
               <li>

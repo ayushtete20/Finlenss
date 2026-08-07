@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchArticles, fetchCategories, fetchCertifications } from '../../../services/api';
 import { supabase } from '../../../utils/supabaseClient';
 import ClayCard from '../../UI/ClayCard';
+import Portfolio from '../../portfolio/Portfolio';
 import { TrendingUp, RefreshCw, AlertCircle, Sparkles, Zap } from 'lucide-react';
 
 const LATEST_LIMIT = 6;
@@ -288,6 +289,11 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
             <p className="text-sm font-semibold text-[#0D47A1]/50">No articles found for this filter.</p>
           </div>
         )}
+      </section>
+
+      {/* Portfolio Section */}
+      <section id="portfolio" className="pt-8">
+        <Portfolio />
       </section>
     </div>
   );

@@ -70,17 +70,19 @@ export const Post = () => {
 
   const backendUrl = import.meta.env.VITE_API_URL || '';
 
-  const rawExcelUrl = linkedCert?.excel_url || linkedCert?.attachment_url || null;
+  const rawExcelUrl = linkedCert?.excel_url || linkedCert?.attachment_url || article?.excel_url || article?.attachment_url || null;
   const excelUrl = rawExcelUrl && rawExcelUrl.startsWith('/uploads')
     ? `${backendUrl}${rawExcelUrl}`
     : rawExcelUrl;
+
+  const excelFileName = linkedCert?.excel_name || linkedCert?.attachment_name || article?.excel_name || article?.attachment_name || (linkedCert?.title ? `${linkedCert.title} Model` : `${article?.title || 'Financial'} Model`);
 
   const rawCertDocUrl = linkedCert?.cert_doc_url || null;
   const certDocUrl = rawCertDocUrl && rawCertDocUrl.startsWith('/uploads')
     ? `${backendUrl}${rawCertDocUrl}`
     : rawCertDocUrl;
 
-  const portfolioUrl = `/portfolio/#certifications`;
+  const portfolioUrl = `/#portfolio`;
 
   return (
     <article className="max-w-4xl mx-auto space-y-8 py-4">
@@ -231,33 +233,35 @@ export const Post = () => {
           );
         })}
 
-        {/* Excel Download Banner for Financial Valuation Articles */}
-        <div className="mt-8 p-6 rounded-2xl bg-[#E3F2FD] border border-[#90CAF9] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-md">
-              <FileSpreadsheet className="w-6 h-6" />
+        {/* Excel Download Banner — rendered ONLY if an Excel model or file is attached to this specific article */}
+        {excelUrl && (
+          <div className="mt-8 p-6 rounded-2xl bg-[#E3F2FD] border border-[#90CAF9] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-md">
+                <FileSpreadsheet className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-[#0D47A1] text-base font-serif">
+                  {excelFileName}
+                </h4>
+                <p className="text-xs text-[#0D47A1]/80 font-sans">
+                  Interactive forecast workbook / supporting document attached to this article.
+                </p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-extrabold text-[#0D47A1] text-base font-serif">
-                Dabur India 3-Statement Financial Model
-              </h4>
-              <p className="text-xs text-[#0D47A1]/80 font-sans">
-                Interactive forecast workbook (.xlsx) with Income Statement, Balance Sheet, & Cash Flow linking.
-              </p>
-            </div>
-          </div>
 
-          <a
-            href="/Dabur_India_3_Statement_Financial_Model.xlsx"
-            download="Dabur_India_3_Statement_Financial_Model.xlsx"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
-          >
-            <Download className="w-4 h-4" />
-            <span>Download Model (.xlsx)</span>
-          </a>
-        </div>
+            <a
+              href={excelUrl}
+              download={excelFileName}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download Model</span>
+            </a>
+          </div>
+        )}
       </div>
 
       {related.length > 0 && (

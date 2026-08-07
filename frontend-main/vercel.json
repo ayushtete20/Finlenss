@@ -1,14 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/portfolio",
-      "destination": "https://finlenss-portfolio-aayush-6845.vercel.app"
-    },
-    {
-      "source": "/portfolio/:match*",
-      "destination": "https://finlenss-portfolio-aayush-6845.vercel.app/:match*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { TrendingUp, ShieldCheck, LogOut, Menu, X, ExternalLink, LayoutDashboard, Search } from 'lucide-react';
+import { TrendingUp, ShieldCheck, LogOut, Menu, X, LayoutDashboard, Search } from 'lucide-react';
 import { isAdminLoggedIn, removeAuthToken } from '../../services/api';
 
 export const Header = ({ onSearchChange, searchTerm }) => {
@@ -37,12 +37,10 @@ export const Header = ({ onSearchChange, searchTerm }) => {
               Markets
             </a>
             <a
-              href="https://finlenss-portfolio-aayush-6845.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-[#2196F3] transition-colors flex items-center gap-1"
+              href="#portfolio"
+              className="cursor-pointer hover:text-blue-400 transition-colors"
             >
-              Portfolio <ExternalLink className="w-3 h-3 ml-0.5 opacity-80" />
+              Portfolio
             </a>
           </nav>
 
@@ -105,14 +103,11 @@ export const Header = ({ onSearchChange, searchTerm }) => {
             Insights
           </Link>
           <a
-            href="https://finlenss-portfolio-aayush-6845.vercel.app"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#portfolio"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="block py-1.5 leading-tight hover:text-[#2196F3] transition-colors"
+            className="block py-2 cursor-pointer hover:text-blue-400 transition-colors"
           >
-            <span className="block font-bold">ADVISOR</span>
-            <span className="block font-bold text-[#2196F3]">PORTFOLIO</span>
+            Portfolio
           </a>
 
           {loggedIn ? (

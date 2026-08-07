@@ -308,7 +308,7 @@ export const fetchCertificationByArticleId = async (articleId) => {
   }
 
   const matchedCert = fallbackCertifications.find(c => String(c.article_id) === String(articleId));
-  return { certification: matchedCert || fallbackCertifications[0] };
+  return { certification: matchedCert || null };
 };
 
 
