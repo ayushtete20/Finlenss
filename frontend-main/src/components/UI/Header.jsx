@@ -99,8 +99,9 @@ export const Header = ({ onSearchChange, searchTerm }) => {
           <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="block py-2">
             Insights
           </Link>
-          <a href="/portfolio" className="block py-2 flex items-center gap-1">
-            Advisor Portfolio
+          <a href="/portfolio" onClick={() => setIsMobileMenuOpen(false)} className="block py-1.5 leading-tight">
+            <span className="block font-bold">ADVISOR</span>
+            <span className="block font-bold text-[#2196F3]">PORTFOLIO</span>
           </a>
 
           {loggedIn ? (
