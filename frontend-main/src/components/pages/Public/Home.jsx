@@ -4,7 +4,7 @@ import { fetchArticles, fetchCategories, fetchCertifications } from '../../../se
 import { supabase } from '../../../utils/supabaseClient';
 import ClayCard from '../../UI/ClayCard';
 import Portfolio from '../../portfolio/Portfolio';
-import { TrendingUp, RefreshCw, AlertCircle, Sparkles, Zap } from 'lucide-react';
+import { TrendingUp, RefreshCw, AlertCircle, Sparkles, Zap, Eye } from 'lucide-react';
 
 const LATEST_LIMIT = 6;
 
@@ -142,8 +142,13 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
                   <span className="block text-sm font-bold text-white">
                     {featuredArticle.author || 'Tushar Singh'}
                   </span>
-                  <span className="block text-[10px] uppercase font-bold tracking-widest text-slate-200/80">
-                    LEAD ANALYST • {featuredArticle.read_time || '8 MIN READ'}
+                  <span className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest text-slate-200/80">
+                    <span>LEAD ANALYST • {featuredArticle.read_time || '8 MIN READ'}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1 bg-white/15 px-2 py-0.5 rounded text-white font-semibold">
+                      <Eye className="w-3 h-3" />
+                      {featuredArticle.views || 0} visits
+                    </span>
                   </span>
                 </div>
               </div>

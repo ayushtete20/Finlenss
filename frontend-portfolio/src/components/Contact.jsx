@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle2, ShieldCheck, Loader2, AlertCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Send, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '../utils/supabaseClient';
 
 export const Contact = () => {
@@ -86,10 +86,6 @@ export const Contact = () => {
           {/* Left Column: Contact Graphics & Direct Details */}
           <div className="lg:col-span-5 bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-6 sm:p-8 flex flex-col justify-between space-y-8">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-[#BFDBFE] text-[#1E3A8A] text-xs font-bold uppercase tracking-wider">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#2563EB]" /> VERIFIED ADVISOR
-              </div>
-
               <div>
                 <h3 className="text-2xl font-extrabold text-[#1E3A8A] font-serif">
                   Tushar Singh

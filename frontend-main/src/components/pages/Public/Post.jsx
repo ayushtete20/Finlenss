@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { fetchArticleById, fetchArticles, fetchCertificationByArticleId } from '../../../services/api';
+import { fetchArticleById, fetchArticles, fetchCertificationByArticleId, trackArticleClick } from '../../../services/api';
 import { ArrowLeft, Clock, Eye, User, Share2, Calendar, Check, FileSpreadsheet, Download, BadgeCheck, Award, ExternalLink } from 'lucide-react';
 import ClayCard from '../../UI/ClayCard';
 
@@ -20,11 +20,21 @@ export const Post = () => {
       setError(null);
       try {
         const data = await fetchArticleById(id);
-        setArticle(data.article);
+        if (data.article) {
+          // Increment and track article visit
+          const nextViews = await trackArticleClick(id);
+          const liveArticle = {
+            ...data.article,
+            views: nextViews || (data.article.views || 0) + 1
+          };
+          setArticle(liveArticle);
 
-        if (data.article && data.article.category) {
-          const relatedData = await fetchArticles({ category: data.article.category });
-          setRelated((relatedData.articles || []).filter(a => a.id !== parseInt(id)).slice(0, 3));
+          if (liveArticle.category) {
+            const relatedData = await fetchArticles({ category: liveArticle.category });
+            setRelated((relatedData.articles || []).filter(a => a.id !== parseInt(id)).slice(0, 3));
+          }
+        } else {
+          setError('Article not found.');
         }
 
         // Fetch linked certification (if any)
@@ -181,7 +191,7 @@ export const Post = () => {
           </p>
         )}
 
-        <div className="flex flex-wrap items-center gap-6 text-xs font-semibold text-slate-200/80 pt-2 border-t border-[#90CAF9]/40 py-3">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs font-semibold text-slate-200/80 pt-2 border-t border-[#90CAF9]/40 py-3">
           <span className="flex items-center gap-1.5 text-white font-bold">
             <User className="w-4 h-4 text-white" />
             {article.author || 'Tushar Singh'}
@@ -193,6 +203,10 @@ export const Post = () => {
           <span className="flex items-center gap-1.5">
             <Clock className="w-4 h-4" />
             {article.read_time || '8 min read'}
+          </span>
+          <span className="flex items-center gap-1.5 text-white font-bold bg-[#2196F3]/40 px-2.5 py-1 rounded-md border border-white/20 shadow-xs">
+            <Eye className="w-4 h-4 text-white" />
+            {article.views || 0} {(article.views || 0) === 1 ? 'visit' : 'visits'}
           </span>
         </div>
       </header>

@@ -7,6 +7,7 @@ import {
   deleteArticle,
   trackSiteVisit,
   trackArticleClick,
+  resetAllViews,
   getSiteStats,
   toggleTrending,
   getAllCategories,
@@ -21,8 +22,11 @@ const router = express.Router();
 router.get('/', getAllArticles);
 router.get('/categories/all', getAllCategories);
 router.post('/track-visit', trackSiteVisit);
+router.post('/stats/visit', trackSiteVisit);
+router.post('/reset-views', resetAllViews);
 router.get('/stats/summary', getSiteStats);
 router.post('/:id/click', trackArticleClick);
+router.post('/:id/track', trackArticleClick);
 router.get('/:id', getArticleById);
 
 // Admin protected routes

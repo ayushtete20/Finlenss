@@ -194,7 +194,7 @@ export const initDB = () => {
             thumbnail_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80',
             author: 'Tushar Singh, CFA',
             read_time: '7 min read',
-            views: 1420,
+            views: 0,
             content: `
 # Global Macro Analysis Q3 2026
 
@@ -218,7 +218,7 @@ Investors should maintain balanced exposure between inflation-hedged physical co
             thumbnail_url: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=1000&q=80',
             author: 'Alex Vance',
             read_time: '6 min read',
-            views: 980,
+            views: 0,
             content: `
 # The Convergence of Real-World Assets and Blockchain Tech
 
@@ -238,7 +238,7 @@ Real-World Asset (RWA) tokenization has scaled past $15 Billion in Total Value L
             thumbnail_url: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1000&q=80',
             author: 'Sophia Chen',
             read_time: '8 min read',
-            views: 2150,
+            views: 0,
             content: `
 # Tax Efficiency in High Net Worth Wealth Preservation
 
@@ -258,7 +258,7 @@ Maximizing net investment income is not merely a matter of security selection; i
             thumbnail_url: 'https://images.unsplash.com/photo-1642543492481-44e81e3914a7?auto=format&fit=crop&w=1000&q=80',
             author: 'Tushar Singh, CFA',
             read_time: '10 min read',
-            views: 3100,
+            views: 0,
             content: `
 # Machine Learning in Systematic Trading
 

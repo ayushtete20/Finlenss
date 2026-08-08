@@ -26,7 +26,7 @@ export const fallbackArticles = [
     thumbnail_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1000&q=80',
     author: 'Tushar Singh, CFA',
     read_time: '5 min read',
-    views: 1850,
+    views: 0,
     is_trending: 1,
     created_at: new Date().toISOString(),
     content: `Completed a 3-Statement Financial Model of Dabur India, integrating the Income Statement, Balance Sheet, and Cash Flow Statement to forecast the company's financial performance.
@@ -50,7 +50,7 @@ Key Insights:
     thumbnail_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80',
     author: 'Tushar Singh, CFA',
     read_time: '7 min read',
-    views: 1420,
+    views: 0,
     is_trending: 1,
     created_at: new Date().toISOString(),
     content: `Global macro conditions in 2026 are defined by shifting central bank policies, yield curve realignments, and strategic capital reallocation toward resilient cash-flow-generating assets.`
@@ -63,7 +63,7 @@ Key Insights:
     thumbnail_url: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=1000&q=80',
     author: 'Tushar Singh',
     read_time: '9 min read',
-    views: 980,
+    views: 0,
     is_trending: 0,
     created_at: new Date().toISOString(),
     content: `Real-World Asset (RWA) tokenization is revolutionizing private credit markets, allowing institutional investors to tap into transparent, automated DeFi liquidity pools.`
@@ -76,7 +76,7 @@ Key Insights:
     thumbnail_url: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1000&q=80',
     author: 'Tushar Singh',
     read_time: '6 min read',
-    views: 2150,
+    views: 0,
     is_trending: 1,
     created_at: new Date().toISOString(),
     content: `SaaS valuation requires rigorous quantitative modeling incorporating Rule of 40 performance metrics, customer acquisition cost payback, and Net Revenue Retention rates.`
@@ -154,6 +154,25 @@ export const removeAuthToken = logoutAdmin;
 
 // --- SECTION 1: SUPABASE DIRECT SDK DATA FETCHING ---
 
+const checkAndResetViewsOnce = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    const hasReset = localStorage.getItem('article_views_reset_zero_v1');
+    if (!hasReset) {
+      const cached = localStorage.getItem('custom_articles_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) {
+          const resetList = parsed.map(a => ({ ...a, views: 0 }));
+          localStorage.setItem('custom_articles_cache', JSON.stringify(resetList));
+        }
+      }
+      localStorage.setItem('article_views_reset_zero_v1', 'true');
+    }
+  } catch (e) {}
+};
+checkAndResetViewsOnce();
+
 const getStoredCustomArticles = () => {
   if (typeof window === 'undefined') return null;
   try {
@@ -213,14 +232,16 @@ export const fetchArticles = async (params = {}) => {
   if (localCache && Array.isArray(localCache)) {
     const merged = articles.map(art => {
       const match = localCache.find(c => String(c.id) === String(art.id));
-      return match ? { ...art, ...match } : art;
+      return match ? { ...art, ...match, views: match.views !== undefined ? match.views : (art.views || 0) } : { ...art, views: art.views || 0 };
     });
     localCache.forEach(c => {
       if (!merged.some(m => String(m.id) === String(c.id))) {
-        merged.unshift(c);
+        merged.unshift({ ...c, views: c.views || 0 });
       }
     });
     articles = merged;
+  } else {
+    articles = articles.map(a => ({ ...a, views: a.views || 0 }));
   }
 
   if (params.category && params.category !== 'All') {
@@ -593,23 +614,158 @@ export const loginAdmin = async (password) => {
 };
 
 export const fetchSiteStats = async () => {
+  let visitsCount = 0;
+  try {
+    visitsCount = parseInt(localStorage.getItem('site_total_visits') || '0', 10);
+  } catch (e) {}
+
   try {
     const { count: artCount } = await supabase.from('articles').select('*', { count: 'exact', head: true });
     const { count: certCount } = await supabase.from('certifications').select('*', { count: 'exact', head: true });
     const { count: leadCount } = await supabase.from('consultations').select('*', { count: 'exact', head: true });
+    const { data: statsData } = await supabase.from('site_stats').select('*');
+    
+    let dbVisits = visitsCount;
+    if (statsData) {
+      const vStat = statsData.find(s => s.key === 'total_visits');
+      if (vStat) dbVisits = Math.max(dbVisits, vStat.value || 0);
+    }
+
     if (artCount !== null || certCount !== null || leadCount !== null) {
-      return { total_articles: artCount || 0, total_certifications: certCount || 0, total_consultations: leadCount || 0 };
+      return {
+        total_visits: dbVisits,
+        total_articles: artCount || fallbackArticles.length,
+        total_certifications: certCount || fallbackCertifications.length,
+        total_consultations: leadCount || 0
+      };
     }
   } catch (e) {}
 
   const resData = await safeFetchJson(`${baseUrl}/blogs/stats/summary`);
-  if (resData) return resData;
+  if (resData) return { ...resData, total_visits: Math.max(visitsCount, resData.total_visits || 0) };
 
-  return { total_articles: 0, total_certifications: 0, total_consultations: 0 };
+  return {
+    total_visits: visitsCount || 1,
+    total_articles: fallbackArticles.length,
+    total_certifications: fallbackCertifications.length,
+    total_consultations: 0
+  };
 };
 
-export const trackVisit = async () => {};
-export const trackArticleClick = async (id) => {};
+export const trackVisit = async () => {
+  // 1. Update local session/browser total visits counter
+  try {
+    const currentVisits = parseInt(localStorage.getItem('site_total_visits') || '0', 10);
+    localStorage.setItem('site_total_visits', String(currentVisits + 1));
+  } catch (e) {}
+
+  // 2. Update Supabase site_stats if available
+  try {
+    const { data } = await supabase
+      .from('site_stats')
+      .select('value')
+      .eq('key', 'total_visits')
+      .maybeSingle();
+
+    if (data) {
+      await supabase.from('site_stats').update({ value: (data.value || 0) + 1 }).eq('key', 'total_visits');
+    }
+  } catch (e) {}
+
+  // 3. Update backend site stats
+  try {
+    await safeFetchJson(`${baseUrl}/blogs/stats/visit`, { method: 'POST' });
+  } catch (e) {}
+};
+
+export const trackArticleClick = async (id) => {
+  const numericId = parseInt(id, 10);
+  const targetId = isNaN(numericId) ? id : numericId;
+  let updatedCount = 1;
+
+  // 1. Update in-memory fallbackArticles
+  const fallback = fallbackArticles.find(a => String(a.id) === String(id));
+  if (fallback) {
+    fallback.views = (fallback.views || 0) + 1;
+    updatedCount = fallback.views;
+  }
+
+  // 2. Update localStorage cache
+  try {
+    let localCache = getStoredCustomArticles() || [...fallbackArticles];
+    const cachedIdx = localCache.findIndex(a => String(a.id) === String(id));
+    if (cachedIdx !== -1) {
+      localCache[cachedIdx] = {
+        ...localCache[cachedIdx],
+        views: (localCache[cachedIdx].views || 0) + 1
+      };
+      updatedCount = localCache[cachedIdx].views;
+    } else {
+      localCache.push({ id: targetId, views: 1 });
+      updatedCount = 1;
+    }
+    setStoredCustomArticles(localCache);
+  } catch (e) {}
+
+  // 3. Update Supabase if available
+  try {
+    const { data: currentArt } = await supabase
+      .from('articles')
+      .select('views')
+      .eq('id', targetId)
+      .maybeSingle();
+
+    if (currentArt) {
+      const newViews = (currentArt.views || 0) + 1;
+      await supabase.from('articles').update({ views: newViews }).eq('id', targetId);
+      updatedCount = newViews;
+    }
+  } catch (e) {
+    console.warn('Supabase view tracking notice:', e);
+  }
+
+  // 4. Update backend if available
+  try {
+    await safeFetchJson(`${baseUrl}/blogs/${id}/track`, { method: 'POST' });
+  } catch (e) {}
+
+  return updatedCount;
+};
+
+// Reset all views and visits to 0
+export const resetAllCounters = async () => {
+  // 1. Reset localStorage
+  try {
+    localStorage.setItem('site_total_visits', '0');
+    const cached = localStorage.getItem('custom_articles_cache');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed)) {
+        const resetList = parsed.map(a => ({ ...a, views: 0 }));
+        localStorage.setItem('custom_articles_cache', JSON.stringify(resetList));
+      }
+    }
+  } catch (e) {}
+
+  // 2. Reset in-memory fallback articles
+  fallbackArticles.forEach(a => {
+    a.views = 0;
+  });
+
+  // 3. Reset Supabase articles & site_stats
+  try {
+    await supabase.from('articles').update({ views: 0 }).neq('id', 0);
+    await supabase.from('site_stats').update({ value: 0 }).eq('key', 'total_visits');
+    await supabase.from('site_stats').update({ value: 0 }).eq('key', 'total_clicks');
+  } catch (e) {}
+
+  // 4. Reset Backend if available
+  try {
+    await safeFetchJson(`${baseUrl}/blogs/reset-views`, { method: 'POST' });
+  } catch (e) {}
+
+  return { success: true, message: 'All view and visit counters have been reset to 0.' };
+};
 
 // File Upload via Supabase Storage SDK
 export const uploadFile = async (file) => {

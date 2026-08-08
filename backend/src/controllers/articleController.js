@@ -73,6 +73,18 @@ export const trackArticleClick = (req, res) => {
   });
 };
 
+// Reset all views and visits to 0
+export const resetAllViews = (req, res) => {
+  db.run('UPDATE articles SET views = 0', function(err) {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to reset article views' });
+    }
+    db.run("UPDATE site_stats SET value = 0 WHERE key IN ('total_visits', 'total_clicks')", function() {
+      res.json({ success: true, message: 'All article views and visits reset to 0' });
+    });
+  });
+};
+
 // Get analytics stats for Owner Dashboard
 export const getSiteStats = (req, res) => {
   db.all("SELECT key, value FROM site_stats", [], (err, rows) => {

@@ -16,9 +16,10 @@ import {
   createCertification,
   updateCertification,
   deleteCertification,
-  uploadFile
+  uploadFile,
+  resetAllCounters
 } from '../../../services/api';
-import { Plus, Edit3, Trash2, Search, Eye, FileText, BarChart3, AlertCircle, Sparkles, CheckCircle2, TrendingUp, Users, Flame, FolderPlus, Tag, Calendar, Mail, Phone, MessageSquare, Clock, Filter, Inbox, ShieldCheck, Award, FileSpreadsheet, Upload, Paperclip, BadgeCheck, ExternalLink, X, Database } from 'lucide-react';
+import { Plus, Edit3, Trash2, Search, Eye, FileText, BarChart3, AlertCircle, Sparkles, CheckCircle2, TrendingUp, Users, Flame, FolderPlus, Tag, Calendar, Mail, Phone, MessageSquare, Clock, Filter, Inbox, ShieldCheck, Award, FileSpreadsheet, Upload, Paperclip, BadgeCheck, ExternalLink, X, Database, RefreshCw } from 'lucide-react';
 import ClayButton from '../../UI/ClayButton';
 
 const backendUrl = import.meta.env.VITE_API_URL || '';
@@ -131,6 +132,18 @@ export const Dashboard = () => {
       setTimeout(() => setNotification(null), 3000);
     } catch (err) {
       alert('Failed to delete consultation: ' + err.message);
+    }
+  };
+
+  const handleResetCounters = async () => {
+    if (!window.confirm('Reset all article views and website visit counters to 0?')) return;
+    try {
+      await resetAllCounters();
+      setNotification('✅ All article views and website visit counters reset to 0.');
+      loadData();
+      setTimeout(() => setNotification(null), 3500);
+    } catch (err) {
+      alert('Failed to reset counters: ' + err.message);
     }
   };
 
@@ -360,8 +373,15 @@ export const Dashboard = () => {
               Add New Certification
             </ClayButton>
           )}
+          <button
+            onClick={handleResetCounters}
+            className="px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 hover:bg-amber-100 font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            title="Reset all article views and website visits to 0"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-amber-700" /> Reset Views to 0
+          </button>
           <Link to="/admin/seed">
-            <button className="px-3.5 py-2 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 hover:bg-rose-100 font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs">
+            <button className="px-3.5 py-2 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 hover:bg-rose-100 font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
               <Database className="w-3.5 h-3.5 text-rose-600" /> Supabase Seed Tool
             </button>
           </Link>

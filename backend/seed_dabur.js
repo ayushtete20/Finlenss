@@ -40,7 +40,7 @@ db.get('SELECT * FROM articles WHERE title LIKE ?', ['%Dabur%'], (err, row) => {
         'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1000&q=80',
         'Tushar Singh, CFA',
         '5 min read',
-        1850
+        0
       ],
       function (err) {
         if (err) {

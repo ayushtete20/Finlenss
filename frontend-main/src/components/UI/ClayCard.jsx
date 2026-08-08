@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, BadgeCheck } from 'lucide-react';
+import { ArrowUpRight, BadgeCheck, Eye } from 'lucide-react';
 
 export const ClayCard = ({ article, linkedCert }) => {
-  const { id, title, excerpt, category, author, read_time } = article;
+  const { id, title, excerpt, category, author, read_time, views } = article;
 
   return (
     <article className="bg-[#0D47A1] text-white border border-[#90CAF9] shadow-lg group flex flex-col h-full overflow-hidden p-6 sm:p-7 relative rounded-2xl hover:border-[#2196F3] hover:-translate-y-1 transition-all duration-300">
@@ -17,14 +17,19 @@ export const ClayCard = ({ article, linkedCert }) => {
         </div>
       )}
 
-      {/* Category Pill Tag */}
-      <div className={`flex justify-between items-start mb-4 ${linkedCert ? 'mt-7' : ''}`}>
+      {/* Category Pill Tag & Live Views */}
+      <div className={`flex justify-between items-center mb-4 ${linkedCert ? 'mt-7' : ''}`}>
         <span className="px-3 py-1 text-[10px] font-bold rounded-md bg-[#2196F3] text-white uppercase tracking-wider">
           {category || 'FEATURED'}
         </span>
-        <span className="text-[10px] text-slate-200/80 font-semibold">
-          {read_time || '6 MIN READ'}
-        </span>
+        <div className="flex items-center gap-2 text-[10px] text-slate-200/80 font-semibold">
+          <span className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded">
+            <Eye className="w-3 h-3 text-slate-200/90" />
+            {views || 0} visits
+          </span>
+          <span>•</span>
+          <span>{read_time || '6 MIN READ'}</span>
+        </div>
       </div>
 
       {/* Article Title - White Text */}
