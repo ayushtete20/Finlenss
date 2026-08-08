@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="finlenssGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EFF6FF" />
+      <stop offset="100%" stop-color="#E3F2FD" />
+    </linearGradient>
+  </defs>
+  <!-- Rounded Square Container matching Finlenss Header Logo -->
+  <rect x="4" y="4" width="56" height="56" rx="14" ry="14" fill="url(#finlenssGrad)" stroke="#0D47A1" stroke-width="4.5"/>
+  <!-- TrendingUp Financial Indicator Icon in Institutional Navy #0D47A1 -->
+  <g fill="none" stroke="#0D47A1" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" transform="translate(12, 12) scale(1.6667)">
+    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+    <polyline points="16 7 22 7 22 13"/>
+  </g>
+</svg>
