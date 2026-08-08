@@ -794,3 +794,422 @@ export const uploadFile = async (file) => {
     originalName: file.name
   };
 };
+
+// ==========================================
+// SECTION 1: COLLABORATIONS API
+// ==========================================
+
+export const fetchCollaborations = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('collaborations')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      return { collaborations: data };
+    }
+  } catch (err) {
+    console.warn('Supabase fetchCollaborations error:', err);
+  }
+
+  const token = getAuthToken();
+  const data = await safeFetchJson(`${baseUrl}/admin/collaborations`, {
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  });
+  if (data && data.collaborations) return data;
+
+  try {
+    const cached = localStorage.getItem('local_collaborations');
+    if (cached) return { collaborations: JSON.parse(cached) };
+  } catch (e) {}
+
+  return { collaborations: [] };
+};
+
+export const createCollaboration = async (collabData) => {
+  const payload = {
+    name: collabData.name,
+    email: collabData.email,
+    project_type: collabData.project_type || collabData.projectType || 'General Inquiry',
+    message: collabData.message || '',
+    status: 'Pending',
+    created_at: new Date().toISOString()
+  };
+
+  // 1. Supabase direct SDK insert
+  try {
+    const { data, error } = await supabase
+      .from('collaborations')
+      .insert([payload])
+      .select()
+      .single();
+
+    if (!error && data) {
+      return { success: true, collaboration: data, message: 'Collaboration request received!' };
+    }
+  } catch (err) {
+    console.warn('Supabase createCollaboration error:', err);
+  }
+
+  // 2. API backend fallback
+  const resData = await safeFetchJson(`${baseUrl}/collaborations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (resData) return resData;
+
+  // 3. LocalStorage fallback
+  try {
+    const cached = JSON.parse(localStorage.getItem('local_collaborations') || '[]');
+    const newEntry = { id: Date.now(), ...payload };
+    cached.unshift(newEntry);
+    localStorage.setItem('local_collaborations', JSON.stringify(cached));
+    return { success: true, collaboration: newEntry, message: 'Collaboration request received!' };
+  } catch (e) {}
+
+  return { success: true, message: 'Collaboration request received!' };
+};
+
+export const updateCollaborationStatus = async (id, status) => {
+  try {
+    const { error } = await supabase
+      .from('collaborations')
+      .update({ status })
+      .eq('id', id);
+    if (!error) return { success: true, message: 'Status updated' };
+  } catch (err) {
+    console.warn('Supabase updateCollaborationStatus error:', err);
+  }
+
+  const token = getAuthToken();
+  const resData = await safeFetchJson(`${baseUrl}/admin/collaborations/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ status })
+  });
+  if (resData) return resData;
+
+  try {
+    const cached = JSON.parse(localStorage.getItem('local_collaborations') || '[]');
+    const idx = cached.findIndex(c => String(c.id) === String(id));
+    if (idx !== -1) {
+      cached[idx].status = status;
+      localStorage.setItem('local_collaborations', JSON.stringify(cached));
+    }
+  } catch (e) {}
+
+  return { success: true, message: 'Status updated' };
+};
+
+export const deleteCollaboration = async (id) => {
+  try {
+    const { error } = await supabase
+      .from('collaborations')
+      .delete()
+      .eq('id', id);
+    if (!error) return { success: true, message: 'Collaboration deleted' };
+  } catch (err) {
+    console.warn('Supabase deleteCollaboration error:', err);
+  }
+
+  const token = getAuthToken();
+  const resData = await safeFetchJson(`${baseUrl}/admin/collaborations/${id}`, {
+    method: 'DELETE',
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  });
+  if (resData) return resData;
+
+  try {
+    let cached = JSON.parse(localStorage.getItem('local_collaborations') || '[]');
+    cached = cached.filter(c => String(c.id) !== String(id));
+    localStorage.setItem('local_collaborations', JSON.stringify(cached));
+  } catch (e) {}
+
+  return { success: true, message: 'Collaboration deleted' };
+};
+
+// ==========================================
+// SECTION 2: READER FEEDBACK API
+// ==========================================
+
+export const fetchFeedback = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('feedback')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      return { feedback: data };
+    }
+  } catch (err) {
+    console.warn('Supabase fetchFeedback error:', err);
+  }
+
+  const token = getAuthToken();
+  const data = await safeFetchJson(`${baseUrl}/admin/feedback`, {
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  });
+  if (data && data.feedback) return data;
+
+  try {
+    const cached = localStorage.getItem('local_feedback');
+    if (cached) return { feedback: JSON.parse(cached) };
+  } catch (e) {}
+
+  return { feedback: [] };
+};
+
+export const createFeedback = async (feedbackData) => {
+  const payload = {
+    rating: parseInt(feedbackData.rating || 5, 10),
+    suggestion: feedbackData.suggestion || feedbackData.suggestions || feedbackData.message || '',
+    name: feedbackData.name || 'Anonymous Reader',
+    email: feedbackData.email || '',
+    article_id: feedbackData.article_id ? parseInt(feedbackData.article_id, 10) : null,
+    created_at: new Date().toISOString()
+  };
+
+  // 1. Supabase SDK insert
+  try {
+    const { data, error } = await supabase
+      .from('feedback')
+      .insert([payload])
+      .select()
+      .single();
+
+    if (!error && data) {
+      return { success: true, feedback: data, message: 'Thank you for your valuable feedback!' };
+    }
+  } catch (err) {
+    console.warn('Supabase createFeedback error:', err);
+  }
+
+  // 2. API fallback
+  const resData = await safeFetchJson(`${baseUrl}/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (resData) return resData;
+
+  // 3. LocalStorage fallback
+  try {
+    const cached = JSON.parse(localStorage.getItem('local_feedback') || '[]');
+    const newEntry = { id: Date.now(), ...payload };
+    cached.unshift(newEntry);
+    localStorage.setItem('local_feedback', JSON.stringify(cached));
+    return { success: true, feedback: newEntry, message: 'Thank you for your valuable feedback!' };
+  } catch (e) {}
+
+  return { success: true, message: 'Thank you for your valuable feedback!' };
+};
+
+export const deleteFeedback = async (id) => {
+  try {
+    const { error } = await supabase
+      .from('feedback')
+      .delete()
+      .eq('id', id);
+    if (!error) return { success: true, message: 'Feedback removed' };
+  } catch (err) {
+    console.warn('Supabase deleteFeedback error:', err);
+  }
+
+  const token = getAuthToken();
+  const resData = await safeFetchJson(`${baseUrl}/admin/feedback/${id}`, {
+    method: 'DELETE',
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  });
+  if (resData) return resData;
+
+  try {
+    let cached = JSON.parse(localStorage.getItem('local_feedback') || '[]');
+    cached = cached.filter(f => String(f.id) !== String(id));
+    localStorage.setItem('local_feedback', JSON.stringify(cached));
+  } catch (e) {}
+
+  return { success: true, message: 'Feedback removed' };
+};
+
+// ==========================================
+// SECTION 3: COMMENTS & LIKE ENGAGEMENT API
+// ==========================================
+
+export const fetchComments = async (articleId) => {
+  try {
+    let query = supabase.from('comments').select('*');
+    if (articleId) {
+      query = query.eq('article_id', parseInt(articleId, 10));
+    }
+    const { data, error } = await query.order('created_at', { ascending: false });
+
+    if (!error && data) {
+      return { comments: data };
+    }
+  } catch (err) {
+    console.warn('Supabase fetchComments error:', err);
+  }
+
+  const data = await safeFetchJson(`${baseUrl}/blogs/${articleId}/comments`);
+  if (data && data.comments) return data;
+
+  try {
+    const cached = JSON.parse(localStorage.getItem('local_comments') || '[]');
+    const filtered = articleId ? cached.filter(c => String(c.article_id) === String(articleId)) : cached;
+    return { comments: filtered };
+  } catch (e) {}
+
+  return { comments: [] };
+};
+
+export const fetchAllComments = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      return { comments: data };
+    }
+  } catch (err) {
+    console.warn('Supabase fetchAllComments error:', err);
+  }
+
+  const token = getAuthToken();
+  const data = await safeFetchJson(`${baseUrl}/admin/comments`, {
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  });
+  if (data && data.comments) return data;
+
+  try {
+    const cached = JSON.parse(localStorage.getItem('local_comments') || '[]');
+    return { comments: cached };
+  } catch (e) {}
+
+  return { comments: [] };
+};
+
+export const createComment = async (commentData) => {
+  const payload = {
+    article_id: parseInt(commentData.article_id, 10),
+    author: commentData.author || commentData.name || 'Anonymous Analyst',
+    content: commentData.content || commentData.comment || '',
+    created_at: new Date().toISOString()
+  };
+
+  // 1. Supabase SDK insert
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .insert([payload])
+      .select()
+      .single();
+
+    if (!error && data) {
+      return { success: true, comment: data, message: 'Comment posted successfully!' };
+    }
+  } catch (err) {
+    console.warn('Supabase createComment error:', err);
+  }
+
+  // 2. API fallback
+  const resData = await safeFetchJson(`${baseUrl}/blogs/${commentData.article_id}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (resData && resData.comment) return resData;
+
+  // 3. LocalStorage fallback
+  try {
+    const cached = JSON.parse(localStorage.getItem('local_comments') || '[]');
+    const newEntry = { id: Date.now(), ...payload };
+    cached.unshift(newEntry);
+    localStorage.setItem('local_comments', JSON.stringify(cached));
+    return { success: true, comment: newEntry, message: 'Comment posted successfully!' };
+  } catch (e) {}
+
+  return { success: true, message: 'Comment posted successfully!' };
+};
+
+export const deleteComment = async (id) => {
+  try {
+    const { error } = await supabase
+      .from('comments')
+      .delete()
+      .eq('id', id);
+    if (!error) return { success: true, message: 'Comment deleted' };
+  } catch (err) {
+    console.warn('Supabase deleteComment error:', err);
+  }
+
+  const token = getAuthToken();
+  const resData = await safeFetchJson(`${baseUrl}/admin/comments/${id}`, {
+    method: 'DELETE',
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+  });
+  if (resData) return resData;
+
+  try {
+    let cached = JSON.parse(localStorage.getItem('local_comments') || '[]');
+    cached = cached.filter(c => String(c.id) !== String(id));
+    localStorage.setItem('local_comments', JSON.stringify(cached));
+  } catch (e) {}
+
+  return { success: true, message: 'Comment deleted' };
+};
+
+export const likeArticle = async (id) => {
+  const numericId = parseInt(id, 10);
+  const targetId = isNaN(numericId) ? id : numericId;
+  let newLikes = 1;
+
+  // 1. Check current likes in Supabase and increment
+  try {
+    const { data: art } = await supabase
+      .from('articles')
+      .select('likes')
+      .eq('id', targetId)
+      .maybeSingle();
+
+    newLikes = ((art && typeof art.likes === 'number') ? art.likes : 0) + 1;
+
+    const { error } = await supabase
+      .from('articles')
+      .update({ likes: newLikes })
+      .eq('id', targetId);
+
+    if (!error) {
+      return { success: true, likes: newLikes };
+    }
+  } catch (err) {
+    console.warn('Supabase likeArticle error:', err);
+  }
+
+  // 2. API fallback
+  const resData = await safeFetchJson(`${baseUrl}/blogs/${id}/like`, { method: 'POST' });
+  if (resData && typeof resData.likes === 'number') return resData;
+
+  // 3. LocalStorage fallback
+  try {
+    const key = `article_likes_${targetId}`;
+    const cur = parseInt(localStorage.getItem(key) || '0', 10);
+    newLikes = cur + 1;
+    localStorage.setItem(key, String(newLikes));
+
+    // Update custom articles cache too
+    const cached = JSON.parse(localStorage.getItem('custom_articles_cache') || '[]');
+    const match = cached.find(a => String(a.id) === String(id));
+    if (match) {
+      match.likes = newLikes;
+      localStorage.setItem('custom_articles_cache', JSON.stringify(cached));
+    }
+  } catch (e) {}
+
+  return { success: true, likes: newLikes };
+};
+

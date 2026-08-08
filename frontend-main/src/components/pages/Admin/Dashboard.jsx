@@ -12,6 +12,12 @@ import {
   fetchConsultations,
   updateConsultationStatus,
   deleteConsultation,
+  fetchCollaborations,
+  updateCollaborationStatus,
+  deleteCollaboration,
+  fetchFeedback,
+  deleteFeedback,
+  fetchAllComments,
   fetchCertifications,
   createCertification,
   updateCertification,
@@ -19,13 +25,53 @@ import {
   uploadFile,
   resetAllCounters
 } from '../../../services/api';
-import { Plus, Edit3, Trash2, Search, Eye, FileText, BarChart3, AlertCircle, Sparkles, CheckCircle2, TrendingUp, Users, Flame, FolderPlus, Tag, Calendar, Mail, Phone, MessageSquare, Clock, Filter, Inbox, ShieldCheck, Award, FileSpreadsheet, Upload, Paperclip, BadgeCheck, ExternalLink, X, Database, RefreshCw } from 'lucide-react';
+import { supabase } from '../../../utils/supabaseClient';
+import {
+  Plus,
+  Edit3,
+  Trash2,
+  Search,
+  Eye,
+  FileText,
+  BarChart3,
+  AlertCircle,
+  Sparkles,
+  CheckCircle2,
+  TrendingUp,
+  Users,
+  Flame,
+  FolderPlus,
+  Tag,
+  Calendar,
+  Mail,
+  Phone,
+  MessageSquare,
+  Clock,
+  Filter,
+  Inbox,
+  ShieldCheck,
+  Award,
+  FileSpreadsheet,
+  Upload,
+  Paperclip,
+  BadgeCheck,
+  ExternalLink,
+  X,
+  Database,
+  RefreshCw,
+  Heart,
+  MessageCircle,
+  Star,
+  MessageSquareHeart,
+  Briefcase
+} from 'lucide-react';
 import ClayButton from '../../UI/ClayButton';
 
 const backendUrl = import.meta.env.VITE_API_URL || '';
 
 export const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState('articles'); // 'articles' | 'consultations' | 'certifications'
+  // Tabs: 'articles' | 'collaborations' | 'feedback' | 'certifications' | 'consultations'
+  const [activeTab, setActiveTab] = useState('articles');
   const [articles, setArticles] = useState([]);
   const [stats, setStats] = useState({ total_visits: 0, total_clicks: 0 });
   const [categoriesList, setCategoriesList] = useState([]);
@@ -34,8 +80,25 @@ export const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // Engagement stats (comments & likes)
+  const [allComments, setAllComments] = useState([]);
   
-  // Consultation lead management state
+  // Section 1 & 3: Collaboration Requests State
+  const [collaborations, setCollaborations] = useState([]);
+  const [collaborationsLoading, setCollaborationsLoading] = useState(false);
+  const [collabSearch, setCollabSearch] = useState('');
+  const [collabStatusFilter, setCollabStatusFilter] = useState('All');
+  const [deleteCollabTarget, setDeleteCollabTarget] = useState(null);
+
+  // Section 1 & 3: Reader Feedback State
+  const [feedbackList, setFeedbackList] = useState([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackSearch, setFeedbackSearch] = useState('');
+  const [feedbackRatingFilter, setFeedbackRatingFilter] = useState('All');
+  const [deleteFeedbackTarget, setDeleteFeedbackTarget] = useState(null);
+
+  // Consultation lead management state (backward compatibility)
   const [consultations, setConsultations] = useState([]);
   const [consultationsLoading, setConsultationsLoading] = useState(false);
   const [consultationSearch, setConsultationSearch] = useState('');
@@ -71,15 +134,48 @@ export const Dashboard = () => {
     }
     loadData();
     loadCategories();
+    loadCollaborationsData();
+    loadFeedbackData();
+    loadCommentsData();
     loadConsultationsData();
     loadCertificationsData();
+  }, []);
+
+  // ── Supabase Realtime Listener ──────────────────────────────────────────────
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-dashboard-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'collaborations' }, () => {
+        loadCollaborationsData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'feedback' }, () => {
+        loadFeedbackData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, () => {
+        loadCommentsData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'articles' }, () => {
+        loadData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await fetchArticles();
-      setArticles(data.articles || []);
+      // Direct Supabase SDK select query
+      const { data: artData, error: artErr } = await supabase.from('articles').select('*').order('created_at', { ascending: false });
+      if (!artErr && artData && artData.length > 0) {
+        setArticles(artData);
+      } else {
+        const data = await fetchArticles();
+        setArticles(data.articles || []);
+      }
+
       const siteStats = await fetchSiteStats();
       if (siteStats) {
         setStats(siteStats);
@@ -100,6 +196,71 @@ export const Dashboard = () => {
     }
   };
 
+  // Section 3: Supabase Select Query for Collaboration Requests
+  const loadCollaborationsData = async () => {
+    setCollaborationsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('collaborations')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setCollaborations(data);
+      } else {
+        const fallback = await fetchCollaborations();
+        setCollaborations(fallback.collaborations || []);
+      }
+    } catch (err) {
+      console.error('Failed to load collaborations:', err);
+      const fallback = await fetchCollaborations();
+      setCollaborations(fallback.collaborations || []);
+    } finally {
+      setCollaborationsLoading(false);
+    }
+  };
+
+  // Section 3: Supabase Select Query for Reader Feedback
+  const loadFeedbackData = async () => {
+    setFeedbackLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('feedback')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setFeedbackList(data);
+      } else {
+        const fallback = await fetchFeedback();
+        setFeedbackList(fallback.feedback || []);
+      }
+    } catch (err) {
+      console.error('Failed to load feedback:', err);
+      const fallback = await fetchFeedback();
+      setFeedbackList(fallback.feedback || []);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  // Section 3: Supabase Select Query for Comments
+  const loadCommentsData = async () => {
+    try {
+      const { data, error } = await supabase.from('comments').select('*');
+      if (!error && data) {
+        setAllComments(data);
+      } else {
+        const fallback = await fetchAllComments();
+        setAllComments(fallback.comments || []);
+      }
+    } catch (err) {
+      console.error('Failed to load comments:', err);
+      const fallback = await fetchAllComments();
+      setAllComments(fallback.comments || []);
+    }
+  };
+
   const loadConsultationsData = async () => {
     setConsultationsLoading(true);
     try {
@@ -109,6 +270,41 @@ export const Dashboard = () => {
       console.error('Failed to load consultations:', err);
     } finally {
       setConsultationsLoading(false);
+    }
+  };
+
+  const handleCollabStatusChange = async (collabId, newStatus) => {
+    try {
+      await updateCollaborationStatus(collabId, newStatus);
+      setNotification(`Collaboration #${collabId} status updated to "${newStatus}"!`);
+      loadCollaborationsData();
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      alert('Failed to update collaboration status: ' + err.message);
+    }
+  };
+
+  const handleDeleteCollaboration = async (id) => {
+    try {
+      await deleteCollaboration(id);
+      setNotification('Collaboration request deleted successfully!');
+      setDeleteCollabTarget(null);
+      loadCollaborationsData();
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      alert('Failed to delete collaboration: ' + err.message);
+    }
+  };
+
+  const handleDeleteFeedback = async (id) => {
+    try {
+      await deleteFeedback(id);
+      setNotification('Reader feedback removed successfully!');
+      setDeleteFeedbackTarget(null);
+      loadFeedbackData();
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      alert('Failed to delete feedback: ' + err.message);
     }
   };
 
@@ -136,10 +332,10 @@ export const Dashboard = () => {
   };
 
   const handleResetCounters = async () => {
-    if (!window.confirm('Reset all article views and website visit counters to 0?')) return;
+    if (!window.confirm('Reset all article views, likes, and website visit counters to 0?')) return;
     try {
       await resetAllCounters();
-      setNotification('✅ All article views and website visit counters reset to 0.');
+      setNotification('✅ All article views, likes, and website visit counters reset to 0.');
       loadData();
       setTimeout(() => setNotification(null), 3500);
     } catch (err) {
@@ -225,7 +421,6 @@ export const Dashboard = () => {
     }
 
     try {
-      // Find linked article details if selected
       const linkedArt = articles.find(a => a.id === parseInt(certForm.article_id));
 
       const payload = {
@@ -324,28 +519,54 @@ export const Dashboard = () => {
     }
   };
 
+  // Filtered Articles
   const filteredArticles = (articles || []).filter(art =>
     art &&
     ((art.title && art.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
      (art.category && art.category.toLowerCase().includes(searchTerm.toLowerCase())))
   );
 
-  const filteredConsultations = (consultations || []).filter(item => {
+  // Filtered Collaborations
+  const filteredCollaborations = (collaborations || []).filter(item => {
     if (!item) return false;
     const matchesSearch =
-      (item.name && item.name.toLowerCase().includes(consultationSearch.toLowerCase())) ||
-      (item.email && item.email.toLowerCase().includes(consultationSearch.toLowerCase())) ||
-      (item.phone && item.phone.toLowerCase().includes(consultationSearch.toLowerCase())) ||
-      (item.topic && item.topic.toLowerCase().includes(consultationSearch.toLowerCase())) ||
-      (item.message && item.message.toLowerCase().includes(consultationSearch.toLowerCase()));
+      (item.name && item.name.toLowerCase().includes(collabSearch.toLowerCase())) ||
+      (item.email && item.email.toLowerCase().includes(collabSearch.toLowerCase())) ||
+      (item.project_type && item.project_type.toLowerCase().includes(collabSearch.toLowerCase())) ||
+      (item.message && item.message.toLowerCase().includes(collabSearch.toLowerCase()));
 
-    const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
+    const matchesStatus = collabStatusFilter === 'All' || item.status === collabStatusFilter;
     return matchesSearch && matchesStatus;
   });
 
+  // Filtered Feedback
+  const filteredFeedback = (feedbackList || []).filter(item => {
+    if (!item) return false;
+    const matchesSearch =
+      (item.suggestion && item.suggestion.toLowerCase().includes(feedbackSearch.toLowerCase())) ||
+      (item.name && item.name.toLowerCase().includes(feedbackSearch.toLowerCase())) ||
+      (item.email && item.email.toLowerCase().includes(feedbackSearch.toLowerCase()));
+
+    const matchesRating =
+      feedbackRatingFilter === 'All' || String(item.rating) === String(feedbackRatingFilter);
+
+    return matchesSearch && matchesRating;
+  });
+
+  // Compute comment counts per article
+  const getCommentCountForArticle = (artId) => {
+    return (allComments || []).filter(c => String(c.article_id) === String(artId)).length;
+  };
+
+  // Aggregated Stats
   const totalViews = (articles || []).reduce((acc, curr) => acc + (curr?.views || 0), 0);
+  const totalLikes = (articles || []).reduce((acc, curr) => acc + (curr?.likes || 0), 0);
   const categoriesCount = (categoriesList || []).length || new Set((articles || []).map(a => a?.category)).size;
-  const pendingConsultationsCount = (consultations || []).filter(c => c?.status === 'Pending').length;
+  const pendingCollabsCount = (collaborations || []).filter(c => c?.status === 'Pending').length;
+
+  const avgFeedbackRating = feedbackList.length > 0
+    ? (feedbackList.reduce((acc, curr) => acc + (curr.rating || 5), 0) / feedbackList.length).toFixed(1)
+    : '5.0';
 
   return (
     <div className="space-y-8">
@@ -356,18 +577,26 @@ export const Dashboard = () => {
             <Sparkles className="w-3.5 h-3.5 text-[#2196F3]" /> Owner Management Control Center
           </div>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-[#0D47A1] font-serif">
-            {activeTab === 'articles' ? 'Article Operations & Insights' : activeTab === 'consultations' ? 'Consultation Lead Reservations' : 'Licenses & Certifications Manager'}
+            {activeTab === 'articles'
+              ? 'Article Operations & Insights'
+              : activeTab === 'collaborations'
+              ? 'Collaboration Requests'
+              : activeTab === 'feedback'
+              ? 'Reader Feedback & Ratings'
+              : 'Licenses & Certifications Manager'}
           </h1>
           <p className="text-xs sm:text-sm text-[#0D47A1]/80">
             {activeTab === 'articles' 
-              ? 'Publish, edit, monitor traffic clicks, manage dynamic insight topics, and customize trending articles.'
-              : activeTab === 'consultations'
-              ? 'Review executive advisory requests, connect with clients, update lead status, and manage reservations.'
+              ? 'Monitor live article likes, comment interactions, traffic views, and trending status.'
+              : activeTab === 'collaborations'
+              ? 'Manage inbound project collaboration inquiries, project types, and partnership statuses.'
+              : activeTab === 'feedback'
+              ? 'Review real-time community quality ratings, reader suggestions, and analytical feedback.'
               : 'Manage accredited license credentials, link articles, and attach downloadable Excel models or documents.'}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {activeTab === 'certifications' && (
             <ClayButton variant="primary" size="md" icon={Plus} onClick={openCreateCertModal}>
               Add New Certification
@@ -378,7 +607,7 @@ export const Dashboard = () => {
             className="px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 hover:bg-amber-100 font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
             title="Reset all article views and website visits to 0"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-amber-700" /> Reset Views to 0
+            <RefreshCw className="w-3.5 h-3.5 text-amber-700" /> Reset Views & Likes
           </button>
           <Link to="/admin/seed">
             <button className="px-3.5 py-2 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 hover:bg-rose-100 font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
@@ -395,52 +624,71 @@ export const Dashboard = () => {
 
       {/* Navigation Tabs Bar */}
       <div className="flex items-center gap-2 border-b border-[#90CAF9]/80 pb-1 overflow-x-auto">
+        {/* Tab 1: Articles */}
         <button
           onClick={() => setActiveTab('articles')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all border cursor-pointer ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all border cursor-pointer shrink-0 ${
             activeTab === 'articles'
               ? 'bg-[#0D47A1] text-white border-[#0D47A1] shadow-sm'
               : 'bg-white text-[#0D47A1] border-[#90CAF9] hover:bg-[#E3F2FD]'
           }`}
         >
           <FileText className="w-4 h-4" />
-          <span>Articles & Topics</span>
+          <span>Articles &amp; Stats</span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${activeTab === 'articles' ? 'bg-white/20 text-white' : 'bg-[#E3F2FD] text-[#0D47A1]'}`}>
             {articles.length}
           </span>
         </button>
 
+        {/* Tab 2: Collaboration Requests (New Section 3) */}
         <button
-          onClick={() => setActiveTab('consultations')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all border cursor-pointer ${
-            activeTab === 'consultations'
+          onClick={() => setActiveTab('collaborations')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all border cursor-pointer shrink-0 ${
+            activeTab === 'collaborations'
               ? 'bg-[#0D47A1] text-white border-[#0D47A1] shadow-sm'
               : 'bg-white text-[#0D47A1] border-[#90CAF9] hover:bg-[#E3F2FD]'
           }`}
         >
-          <Calendar className="w-4 h-4" />
-          <span>Consultation Reservations</span>
-          {pendingConsultationsCount > 0 ? (
+          <Briefcase className="w-4 h-4" />
+          <span>Collaboration Requests</span>
+          {pendingCollabsCount > 0 ? (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400 text-slate-950 animate-pulse">
-              {pendingConsultationsCount} NEW
+              {pendingCollabsCount} NEW
             </span>
           ) : (
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${activeTab === 'consultations' ? 'bg-white/20 text-white' : 'bg-[#E3F2FD] text-[#0D47A1]'}`}>
-              {consultations.length}
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${activeTab === 'collaborations' ? 'bg-white/20 text-white' : 'bg-[#E3F2FD] text-[#0D47A1]'}`}>
+              {collaborations.length}
             </span>
           )}
         </button>
 
+        {/* Tab 3: Reader Feedback (New Section 3) */}
+        <button
+          onClick={() => setActiveTab('feedback')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all border cursor-pointer shrink-0 ${
+            activeTab === 'feedback'
+              ? 'bg-[#0D47A1] text-white border-[#0D47A1] shadow-sm'
+              : 'bg-white text-[#0D47A1] border-[#90CAF9] hover:bg-[#E3F2FD]'
+          }`}
+        >
+          <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+          <span>Reader Feedback</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${activeTab === 'feedback' ? 'bg-white/20 text-white' : 'bg-[#E3F2FD] text-[#0D47A1]'}`}>
+            {feedbackList.length}
+          </span>
+        </button>
+
+        {/* Tab 4: Licenses & Certifications */}
         <button
           onClick={() => setActiveTab('certifications')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all border cursor-pointer ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all border cursor-pointer shrink-0 ${
             activeTab === 'certifications'
               ? 'bg-[#0D47A1] text-white border-[#0D47A1] shadow-sm'
               : 'bg-white text-[#0D47A1] border-[#90CAF9] hover:bg-[#E3F2FD]'
           }`}
         >
           <Award className="w-4 h-4" />
-          <span>Licenses & Certifications</span>
+          <span>Licenses &amp; Certifications</span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${activeTab === 'certifications' ? 'bg-white/20 text-white' : 'bg-[#E3F2FD] text-[#0D47A1]'}`}>
             {certificationsList.length}
           </span>
@@ -455,15 +703,15 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* Overview Analytics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Overview Analytics Cards (Including Likes, Comments & Feedback) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         <div className="mint-card p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#0D47A1] flex items-center justify-center text-white shrink-0 shadow-sm">
             <Users className="w-5 h-5" />
           </div>
           <div>
             <span className="text-xl font-extrabold text-[#0D47A1] font-serif">{(stats.total_visits || 0).toLocaleString()}</span>
-            <span className="block text-[10px] text-[#0D47A1]/70 font-semibold uppercase tracking-wider">Total Website Visits</span>
+            <span className="block text-[10px] text-[#0D47A1]/70 font-semibold uppercase tracking-wider">Website Visits</span>
           </div>
         </div>
 
@@ -478,47 +726,61 @@ export const Dashboard = () => {
         </div>
 
         <div className="mint-card p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#0D47A1] flex items-center justify-center text-white shrink-0 shadow-sm">
-            <FileText className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-rose-500 flex items-center justify-center text-white shrink-0 shadow-sm">
+            <Heart className="w-5 h-5 fill-white" />
           </div>
           <div>
-            <span className="text-xl font-extrabold text-[#0D47A1] font-serif">{articles.length}</span>
-            <span className="block text-[10px] text-[#0D47A1]/70 font-semibold uppercase tracking-wider">Published Articles</span>
+            <span className="text-xl font-extrabold text-[#0D47A1] font-serif">{totalLikes.toLocaleString()}</span>
+            <span className="block text-[10px] text-[#0D47A1]/70 font-semibold uppercase tracking-wider">Total Likes</span>
           </div>
         </div>
 
         <div className="mint-card p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#2196F3] flex items-center justify-center text-white shrink-0 shadow-sm">
-            <BarChart3 className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shrink-0 shadow-sm">
+            <MessageCircle className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-xl font-extrabold text-[#0D47A1] font-serif">{categoriesCount}</span>
-            <span className="block text-[10px] text-[#0D47A1]/70 font-semibold uppercase tracking-wider">Insight Topics</span>
+            <span className="text-xl font-extrabold text-[#0D47A1] font-serif">{allComments.length}</span>
+            <span className="block text-[10px] text-[#0D47A1]/70 font-semibold uppercase tracking-wider">Comments</span>
           </div>
         </div>
 
         <div className="mint-card p-4 flex items-center gap-3 border border-amber-300 bg-amber-50/50">
           <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 shrink-0 shadow-sm">
-            <Calendar className="w-5 h-5" />
+            <Briefcase className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-xl font-extrabold text-[#0D47A1] font-serif">{consultations.length}</span>
+            <span className="text-xl font-extrabold text-[#0D47A1] font-serif">{collaborations.length}</span>
             <span className="block text-[10px] text-amber-900 font-bold uppercase tracking-wider">
-              Leads ({pendingConsultationsCount} Pending)
+              Collabs ({pendingCollabsCount} New)
+            </span>
+          </div>
+        </div>
+
+        <div className="mint-card p-4 flex items-center gap-3 border border-emerald-300 bg-emerald-50/50">
+          <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-sm">
+            <Star className="w-5 h-5 fill-white text-white" />
+          </div>
+          <div>
+            <span className="text-xl font-extrabold text-emerald-950 font-serif">{avgFeedbackRating} ⭐</span>
+            <span className="block text-[10px] text-emerald-900 font-bold uppercase tracking-wider">
+              Avg Rating ({feedbackList.length})
             </span>
           </div>
         </div>
       </div>
 
-      {/* TAB 1: ARTICLES & INSIGHT TOPICS MANAGER */}
+      {/* ========================================================================= */}
+      {/* TAB 1: ARTICLES & INSIGHT TOPICS MANAGER WITH LIVE LIKES & COMMENTS STATS */}
+      {/* ========================================================================= */}
       {activeTab === 'articles' && (
         <>
-          {/* Insight Domain Categories Management Card */}
+          {/* Categories Management Card */}
           <div className="mint-card p-6 space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#90CAF9] pb-4">
               <div>
                 <h2 className="text-xl font-extrabold text-[#0D47A1] font-serif flex items-center gap-2">
-                  <Tag className="w-5 h-5 text-[#2196F3]" /> Insight Topics & Category Manager
+                  <Tag className="w-5 h-5 text-[#2196F3]" /> Insight Topics &amp; Category Manager
                 </h2>
                 <p className="text-xs text-[#0D47A1]/80">
                   Add or remove insight topic categories (e.g. Stocks, Cryptocurrency, Macroeconomics).
@@ -529,7 +791,7 @@ export const Dashboard = () => {
               <form onSubmit={handleAddCategory} className="flex items-center gap-2 w-full sm:w-auto">
                 <input
                   type="text"
-                  placeholder="e.g. Cryptocurrency..."
+                  placeholder="e.g. Quantitative Finance..."
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
                   className="px-3.5 py-2 text-xs rounded-xl border border-[#90CAF9] bg-[#E3F2FD]/40 text-[#0D47A1] placeholder-[#0D47A1]/40 focus:outline-none focus:border-[#2196F3] w-full sm:w-60"
@@ -576,7 +838,7 @@ export const Dashboard = () => {
             </div>
           </div>
 
-          {/* Data Table Container */}
+          {/* Published Articles Data Table Container */}
           <div className="mint-card overflow-hidden">
             {/* Table Controls Header */}
             <div className="p-4 border-b border-[#90CAF9] flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -608,73 +870,90 @@ export const Dashboard = () => {
                     <tr>
                       <th className="py-3.5 px-4">Article Title</th>
                       <th className="py-3.5 px-4">Category</th>
-                      <th className="py-3.5 px-4 text-center">Article Clicks</th>
+                      <th className="py-3.5 px-4 text-center">Article Views</th>
+                      <th className="py-3.5 px-4 text-center">Live Likes</th>
+                      <th className="py-3.5 px-4 text-center">Comments</th>
                       <th className="py-3.5 px-4 text-center">Trending Status</th>
                       <th className="py-3.5 px-4">Date</th>
                       <th className="py-3.5 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#90CAF9]/60">
-                    {filteredArticles.map((article) => (
-                      <tr key={article.id} className="hover:bg-[#E3F2FD]/50 transition-colors">
-                        <td className="py-3.5 px-4 font-medium text-[#0D47A1] max-w-xs">
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={article.thumbnail_url || 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=200&q=80'}
-                              alt=""
-                              className="w-10 h-10 rounded-lg object-cover shrink-0 border border-[#90CAF9]"
-                            />
-                            <div>
-                              <Link to={`/post/${article.id}`} className="hover:text-[#2196F3] font-semibold line-clamp-1">
-                                {article.title}
-                              </Link>
-                              <span className="text-[10px] text-[#0D47A1]/70 line-clamp-1">{article.excerpt}</span>
+                    {filteredArticles.map((article) => {
+                      const commentsCount = getCommentCountForArticle(article.id);
+                      return (
+                        <tr key={article.id} className="hover:bg-[#E3F2FD]/50 transition-colors">
+                          <td className="py-3.5 px-4 font-medium text-[#0D47A1] max-w-xs">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={article.thumbnail_url || 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=200&q=80'}
+                                alt=""
+                                className="w-10 h-10 rounded-lg object-cover shrink-0 border border-[#90CAF9]"
+                              />
+                              <div>
+                                <Link to={`/post/${article.id}`} className="hover:text-[#2196F3] font-semibold line-clamp-1">
+                                  {article.title}
+                                </Link>
+                                <span className="text-[10px] text-[#0D47A1]/70 line-clamp-1">{article.excerpt}</span>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#E3F2FD] text-[#0D47A1] border border-[#90CAF9]">
-                            {article.category}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-center font-bold text-[#2196F3]">
-                          <span className="px-2.5 py-1 rounded-lg bg-[#E3F2FD] border border-[#90CAF9]">
-                            👁️ {article.views || 0} visits
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-center">
-                          <button
-                            onClick={() => handleToggleTrending(article)}
-                            title={article.is_trending ? 'Click to unpin from Trending' : 'Click to pin as Owner Trending'}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider transition-all border ${
-                              article.is_trending
-                                ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-md hover:bg-amber-300'
-                                : 'bg-white text-[#0D47A1] border-[#90CAF9] hover:bg-[#E3F2FD]'
-                            }`}
-                          >
-                            <Flame className={`w-3.5 h-3.5 ${article.is_trending ? 'fill-slate-950 text-slate-950' : 'text-[#0D47A1]'}`} />
-                            {article.is_trending ? 'Pinned Trending' : 'Auto Rank'}
-                          </button>
-                        </td>
-                        <td className="py-3.5 px-4 text-[#0D47A1]/80">
-                          {new Date(article.created_at || Date.now()).toLocaleDateString()}
-                        </td>
-                        <td className="py-3.5 px-4 text-right space-x-2">
-                          <Link to={`/admin/editor/${article.id}`}>
-                            <button className="p-1.5 rounded-lg bg-[#E3F2FD] text-[#0D47A1] hover:bg-[#90CAF9]/40 border border-[#90CAF9] transition-colors" title="Edit Article">
-                              <Edit3 className="w-4 h-4" />
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#E3F2FD] text-[#0D47A1] border border-[#90CAF9]">
+                              {article.category}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-center font-bold text-[#2196F3]">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#E3F2FD] border border-[#90CAF9]">
+                              <Eye className="w-3 h-3 text-[#0D47A1]" /> {article.views || 0}
+                            </span>
+                          </td>
+                          {/* Live Like Count */}
+                          <td className="py-3.5 px-4 text-center font-bold text-rose-600">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200">
+                              <Heart className="w-3 h-3 fill-rose-500 text-rose-500" /> {article.likes || 0}
+                            </span>
+                          </td>
+                          {/* Total Comment Count */}
+                          <td className="py-3.5 px-4 text-center font-bold text-[#0D47A1]">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#E3F2FD] border border-[#90CAF9]">
+                              <MessageCircle className="w-3 h-3 text-[#0D47A1]" /> {commentsCount}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <button
+                              onClick={() => handleToggleTrending(article)}
+                              title={article.is_trending ? 'Click to unpin from Trending' : 'Click to pin as Owner Trending'}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider transition-all border ${
+                                article.is_trending
+                                  ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-md hover:bg-amber-300'
+                                  : 'bg-white text-[#0D47A1] border-[#90CAF9] hover:bg-[#E3F2FD]'
+                              }`}
+                            >
+                              <Flame className={`w-3.5 h-3.5 ${article.is_trending ? 'fill-slate-950 text-slate-950' : 'text-[#0D47A1]'}`} />
+                              {article.is_trending ? 'Pinned Trending' : 'Auto Rank'}
                             </button>
-                          </Link>
-                          <button
-                            onClick={() => setDeleteTarget(article)}
-                            className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors"
-                            title="Delete Article"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="py-3.5 px-4 text-[#0D47A1]/80">
+                            {new Date(article.created_at || Date.now()).toLocaleDateString()}
+                          </td>
+                          <td className="py-3.5 px-4 text-right space-x-2">
+                            <Link to={`/admin/editor/${article.id}`}>
+                              <button className="p-1.5 rounded-lg bg-[#E3F2FD] text-[#0D47A1] hover:bg-[#90CAF9]/40 border border-[#90CAF9] transition-colors" title="Edit Article">
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            </Link>
+                            <button
+                              onClick={() => setDeleteTarget(article)}
+                              className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors"
+                              title="Delete Article"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -683,8 +962,10 @@ export const Dashboard = () => {
         </>
       )}
 
-      {/* TAB 2: CONSULTATION RESERVATIONS LEAD MANAGEMENT */}
-      {activeTab === 'consultations' && (
+      {/* ========================================================================= */}
+      {/* TAB 2: COLLABORATION REQUESTS (SECTION 3)                                 */}
+      {/* ========================================================================= */}
+      {activeTab === 'collaborations' && (
         <div className="mint-card overflow-hidden space-y-4">
           {/* Controls Bar: Search & Status Filter */}
           <div className="p-5 border-b border-[#90CAF9] flex flex-col md:flex-row items-center justify-between gap-4">
@@ -693,21 +974,21 @@ export const Dashboard = () => {
                 <Search className="w-4 h-4 absolute left-3 top-3 text-[#0D47A1]/50" />
                 <input
                   type="text"
-                  placeholder="Search client name, email, topic, or notes..."
-                  value={consultationSearch}
-                  onChange={(e) => setConsultationSearch(e.target.value)}
+                  placeholder="Search name, email, project type, message..."
+                  value={collabSearch}
+                  onChange={(e) => setCollabSearch(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-[#90CAF9] bg-[#E3F2FD]/50 text-[#0D47A1] placeholder-[#0D47A1]/40 focus:outline-none focus:border-[#2196F3]"
                 />
               </div>
 
               {/* Status Filter Buttons */}
               <div className="flex items-center gap-1 bg-[#E3F2FD]/60 p-1 rounded-xl border border-[#90CAF9] text-xs w-full sm:w-auto overflow-x-auto">
-                {['All', 'Pending', 'Contacted', 'Scheduled', 'Completed'].map((status) => (
+                {['All', 'Pending', 'In Review', 'Contacted', 'Completed'].map((status) => (
                   <button
                     key={status}
-                    onClick={() => setStatusFilter(status)}
+                    onClick={() => setCollabStatusFilter(status)}
                     className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
-                      statusFilter === status
+                      collabStatusFilter === status
                         ? 'bg-[#0D47A1] text-white shadow-xs'
                         : 'text-[#0D47A1] hover:bg-[#90CAF9]/30'
                     }`}
@@ -719,96 +1000,291 @@ export const Dashboard = () => {
             </div>
 
             <span className="text-xs text-[#0D47A1]/80">
-              Showing <strong className="text-[#0D47A1]">{filteredConsultations.length}</strong> of {consultations.length} reservations
+              Showing <strong className="text-[#0D47A1]">{filteredCollaborations.length}</strong> of {collaborations.length} requests
             </span>
           </div>
 
-          {/* Consultation Lead Table */}
-          {consultationsLoading ? (
-            <div className="py-16 text-center text-[#0D47A1]/60 text-sm">Loading consultation reservations...</div>
-          ) : filteredConsultations.length === 0 ? (
+          {/* Collaborations Table */}
+          {collaborationsLoading ? (
+            <div className="py-16 text-center text-[#0D47A1]/60 text-sm">Loading collaboration requests...</div>
+          ) : filteredCollaborations.length === 0 ? (
             <div className="py-16 text-center text-[#0D47A1]/60 text-sm flex flex-col items-center gap-2">
               <Inbox className="w-8 h-8 text-[#0D47A1]/40" />
-              <span>No consultation requests found matching your filter.</span>
+              <span>No collaboration requests found matching your filter.</span>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-[#0D47A1]">
                 <thead className="bg-[#E3F2FD] text-[#0D47A1] font-serif uppercase tracking-wider text-[11px] border-b border-[#90CAF9]">
                   <tr>
-                    <th className="py-3.5 px-4">Client Name & Details</th>
-                    <th className="py-3.5 px-4">Advisory Domain</th>
-                    <th className="py-3.5 px-4">Inquiry / Project Scope</th>
-                    <th className="py-3.5 px-4 text-center">Status Lead Control</th>
-                    <th className="py-3.5 px-4">Submitted Date</th>
+                    <th className="py-3.5 px-4">Partner / Client Details</th>
+                    <th className="py-3.5 px-4">Project Type</th>
+                    <th className="py-3.5 px-4">Project Scope &amp; Requirements</th>
+                    <th className="py-3.5 px-4 text-center">Status Control</th>
+                    <th className="py-3.5 px-4">Date</th>
                     <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#90CAF9]/60">
-                  {filteredConsultations.map((item) => (
+                  {filteredCollaborations.map((item) => (
                     <tr key={item.id} className="hover:bg-[#E3F2FD]/50 transition-colors">
                       <td className="py-3.5 px-4">
-                        <div>
-                          <span className="block font-bold text-sm text-[#0D47A1]">{item.name}</span>
-                          <div className="flex items-center gap-3 text-[11px] text-[#0D47A1]/80 mt-1">
-                            <a href={`mailto:${item.email}`} className="flex items-center gap-1 hover:text-[#2196F3] font-medium">
-                              <Mail className="w-3 h-3 text-[#2196F3]" /> {item.email}
-                            </a>
-                            {item.phone && (
-                              <a href={`tel:${item.phone}`} className="flex items-center gap-1 hover:text-[#2196F3] font-medium">
-                                <Phone className="w-3 h-3 text-[#2196F3]" /> {item.phone}
-                              </a>
-                            )}
-                          </div>
-                        </div>
+                        <div className="font-bold text-sm text-[#0D47A1]">{item.name}</div>
+                        <a
+                          href={`mailto:${item.email}`}
+                          className="text-[11px] text-[#2196F3] hover:underline flex items-center gap-1 mt-0.5"
+                        >
+                          <Mail className="w-3 h-3" /> {item.email}
+                        </a>
                       </td>
-
                       <td className="py-3.5 px-4">
-                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-[#E3F2FD] text-[#0D47A1] border border-[#90CAF9]">
-                          {item.topic || 'General Advisory'}
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-[#E3F2FD] text-[#0D47A1] border border-[#90CAF9] inline-block shadow-2xs">
+                          {item.project_type || 'General Inquiry'}
                         </span>
                       </td>
-
-                      <td className="py-3.5 px-4 max-w-xs">
-                        <p className="text-xs text-[#0D47A1]/90 bg-[#E3F2FD]/30 p-2.5 rounded-lg border border-[#90CAF9]/40 font-sans line-clamp-3">
-                          {item.message || <em className="text-[#0D47A1]/50">No additional message provided.</em>}
+                      <td className="py-3.5 px-4 max-w-sm">
+                        <p className="text-xs text-[#334155] leading-relaxed font-sans line-clamp-3">
+                          {item.message || 'No additional project description provided.'}
                         </p>
                       </td>
-
                       <td className="py-3.5 px-4 text-center">
                         <select
                           value={item.status || 'Pending'}
-                          onChange={(e) => handleStatusChange(item.id, e.target.value)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border cursor-pointer focus:outline-none transition-all ${
-                            item.status === 'Pending'
-                              ? 'bg-amber-100 text-amber-900 border-amber-300'
-                              : item.status === 'Contacted'
-                              ? 'bg-blue-100 text-blue-900 border-blue-300'
-                              : item.status === 'Scheduled'
-                              ? 'bg-indigo-100 text-indigo-900 border-indigo-300'
-                              : 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                          onChange={(e) => handleCollabStatusChange(item.id, e.target.value)}
+                          className={`px-3 py-1 text-[11px] font-bold rounded-lg border focus:outline-none cursor-pointer ${
+                            item.status === 'Completed'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                              : item.status === 'Contacted' || item.status === 'In Review'
+                              ? 'bg-blue-50 text-blue-800 border-blue-300'
+                              : 'bg-amber-50 text-amber-900 border-amber-300'
                           }`}
                         >
-                          <option value="Pending">⏳ Pending</option>
-                          <option value="Contacted">📞 Contacted</option>
-                          <option value="Scheduled">📅 Scheduled</option>
-                          <option value="Completed">✅ Completed</option>
+                          <option value="Pending">Pending</option>
+                          <option value="In Review">In Review</option>
+                          <option value="Contacted">Contacted</option>
+                          <option value="Completed">Completed</option>
                         </select>
                       </td>
-
-                      <td className="py-3.5 px-4 text-[#0D47A1]/80 text-[11px] whitespace-nowrap">
-                        <div className="flex items-center gap-1 font-mono">
-                          <Clock className="w-3 h-3 text-[#2196F3]" />
-                          {new Date(item.created_at || Date.now()).toLocaleDateString()}{' '}
-                          {new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </div>
+                      <td className="py-3.5 px-4 text-[#0D47A1]/80">
+                        {new Date(item.created_at || Date.now()).toLocaleDateString()}
                       </td>
-
                       <td className="py-3.5 px-4 text-right">
                         <button
-                          onClick={() => setDeleteConsultationTarget(item)}
+                          onClick={() => setDeleteCollabTarget(item)}
                           className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors"
-                          title="Delete Reservation"
+                          title="Delete Collaboration"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: READER FEEDBACK & RATINGS (SECTION 3)                              */}
+      {/* ========================================================================= */}
+      {activeTab === 'feedback' && (
+        <div className="space-y-6">
+          {/* Feedback Controls & Filter */}
+          <div className="mint-card p-5 border-b border-[#90CAF9] flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+              <div className="relative w-full sm:w-72">
+                <Search className="w-4 h-4 absolute left-3 top-3 text-[#0D47A1]/50" />
+                <input
+                  type="text"
+                  placeholder="Search suggestions, reader name, email..."
+                  value={feedbackSearch}
+                  onChange={(e) => setFeedbackSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-[#90CAF9] bg-[#E3F2FD]/50 text-[#0D47A1] placeholder-[#0D47A1]/40 focus:outline-none focus:border-[#2196F3]"
+                />
+              </div>
+
+              {/* Star Rating Filter */}
+              <div className="flex items-center gap-1 bg-[#E3F2FD]/60 p-1 rounded-xl border border-[#90CAF9] text-xs w-full sm:w-auto overflow-x-auto">
+                <button
+                  onClick={() => setFeedbackRatingFilter('All')}
+                  className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
+                    feedbackRatingFilter === 'All'
+                      ? 'bg-[#0D47A1] text-white shadow-xs'
+                      : 'text-[#0D47A1] hover:bg-[#90CAF9]/30'
+                  }`}
+                >
+                  All Stars
+                </button>
+                {[5, 4, 3, 2, 1].map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setFeedbackRatingFilter(String(st))}
+                    className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1 cursor-pointer ${
+                      String(feedbackRatingFilter) === String(st)
+                        ? 'bg-amber-400 text-slate-950 shadow-xs'
+                        : 'text-[#0D47A1] hover:bg-[#90CAF9]/30'
+                    }`}
+                  >
+                    <span>{st}</span>
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <span className="text-xs text-[#0D47A1]/80">
+              Showing <strong className="text-[#0D47A1]">{filteredFeedback.length}</strong> of {feedbackList.length} feedback entries
+            </span>
+          </div>
+
+          {/* Feedback Submissions List */}
+          {feedbackLoading ? (
+            <div className="mint-card py-16 text-center text-[#0D47A1]/60 text-sm">Loading reader feedback...</div>
+          ) : filteredFeedback.length === 0 ? (
+            <div className="mint-card py-16 text-center text-[#0D47A1]/60 text-sm flex flex-col items-center gap-2">
+              <MessageSquareHeart className="w-8 h-8 text-[#0D47A1]/40" />
+              <span>No feedback entries found matching your filter.</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredFeedback.map((fb) => (
+                <div
+                  key={fb.id}
+                  className="mint-card p-5 space-y-3.5 relative flex flex-col justify-between hover:border-[#2196F3] transition-all"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      {/* Star Rating Display */}
+                      <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`w-4 h-4 ${
+                              s <= (fb.rating || 5)
+                                ? 'text-amber-400 fill-amber-400'
+                                : 'text-slate-300'
+                            }`}
+                          />
+                        ))}
+                        <span className="text-[11px] font-bold text-amber-900 ml-1">
+                          {fb.rating || 5} / 5
+                        </span>
+                      </div>
+
+                      <span className="text-[10px] text-[#475569] font-semibold">
+                        {new Date(fb.created_at || Date.now()).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    {/* Suggestion Text */}
+                    <p className="text-xs sm:text-sm text-[#1E3A8A] leading-relaxed font-sans bg-[#EFF6FF]/60 p-3 rounded-xl border border-[#BFDBFE]/60">
+                      "{fb.suggestion || fb.suggestions || fb.message || 'No suggestion comments.'}"
+                    </p>
+                  </div>
+
+                  {/* Footer / Author info and delete */}
+                  <div className="flex items-center justify-between pt-2 border-t border-[#90CAF9]/40 text-xs">
+                    <div>
+                      <span className="font-bold text-[#0D47A1]">
+                        {fb.name || 'Anonymous Reader'}
+                      </span>
+                      {fb.email && (
+                        <span className="block text-[10px] text-[#2196F3]">
+                          {fb.email}
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => setDeleteFeedbackTarget(fb)}
+                      className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                      title="Delete Feedback"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 4: LICENSES & CERTIFICATIONS MANAGER                                  */}
+      {/* ========================================================================= */}
+      {activeTab === 'certifications' && (
+        <div className="mint-card overflow-hidden space-y-4">
+          <div className="p-4 border-b border-[#90CAF9] flex items-center justify-between">
+            <h3 className="font-bold text-sm text-[#0D47A1]">Accredited Licenses &amp; Certificates</h3>
+            <ClayButton variant="primary" size="sm" icon={Plus} onClick={openCreateCertModal}>
+              Add Credential
+            </ClayButton>
+          </div>
+
+          {certificationsLoading ? (
+            <div className="py-16 text-center text-[#0D47A1]/60 text-sm">Loading certifications...</div>
+          ) : certificationsList.length === 0 ? (
+            <div className="py-16 text-center text-[#0D47A1]/60 text-sm">No certifications registered.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-[#0D47A1]">
+                <thead className="bg-[#E3F2FD] text-[#0D47A1] font-serif uppercase tracking-wider text-[11px] border-b border-[#90CAF9]">
+                  <tr>
+                    <th className="py-3.5 px-4">Credential Title</th>
+                    <th className="py-3.5 px-4">Issuer</th>
+                    <th className="py-3.5 px-4">Issued Dates</th>
+                    <th className="py-3.5 px-4">Linked Post</th>
+                    <th className="py-3.5 px-4">Files Attached</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#90CAF9]/60">
+                  {certificationsList.map((cert) => (
+                    <tr key={cert.id} className="hover:bg-[#E3F2FD]/50 transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-[#0D47A1]">{cert.title}</td>
+                      <td className="py-3.5 px-4 font-semibold">{cert.issuer}</td>
+                      <td className="py-3.5 px-4 text-[#0D47A1]/70">{cert.dates}</td>
+                      <td className="py-3.5 px-4">
+                        {cert.article_id ? (
+                          <Link to={`/post/${cert.article_id}`} className="text-[#2196F3] font-bold hover:underline">
+                            Article #{cert.article_id}
+                          </Link>
+                        ) : (
+                          <span className="text-[#0D47A1]/40 italic">None</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {cert.excel_url && (
+                            <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">
+                              Excel
+                            </span>
+                          )}
+                          {cert.cert_doc_url && (
+                            <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-300">
+                              Doc
+                            </span>
+                          )}
+                          {!cert.excel_url && !cert.cert_doc_url && (
+                            <span className="text-[#0D47A1]/40 text-[10px]">No files</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-right space-x-2">
+                        <button
+                          onClick={() => openEditCertModal(cert)}
+                          className="p-1.5 rounded-lg bg-[#E3F2FD] text-[#0D47A1] hover:bg-[#90CAF9]/40 border border-[#90CAF9] transition-colors"
+                          title="Edit Certification"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteCertTarget(cert)}
+                          className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors"
+                          title="Delete Certification"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -824,175 +1300,103 @@ export const Dashboard = () => {
 
       {/* Delete Article Modal */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0D47A1]/40 backdrop-blur-sm">
-          <div className="bg-white border border-[#90CAF9] p-6 max-w-md w-full space-y-4 rounded-2xl shadow-xl">
-            <div className="flex items-center gap-3 text-rose-600">
-              <AlertCircle className="w-6 h-6" />
-              <h3 className="text-lg font-bold text-[#0D47A1] font-serif">Confirm Deletion</h3>
-            </div>
+        <div className="fixed inset-0 z-50 bg-navy-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="mint-card max-w-sm w-full p-6 space-y-4 shadow-xl border-rose-300">
+            <h3 className="font-extrabold text-base text-[#0D47A1]">Confirm Article Deletion</h3>
             <p className="text-xs text-[#0D47A1]/80">
-              Are you sure you want to permanently delete article: <strong className="text-[#0D47A1]">"{deleteTarget.title}"</strong>?
+              Are you sure you want to permanently delete <strong>"{deleteTarget.title}"</strong>?
             </p>
             <div className="flex items-center justify-end gap-3 pt-2">
-              <ClayButton variant="secondary" size="sm" onClick={() => setDeleteTarget(null)}>
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-800 font-bold text-xs hover:bg-slate-200 transition-colors"
+              >
                 Cancel
-              </ClayButton>
-              <ClayButton variant="danger" size="sm" onClick={() => handleDelete(deleteTarget.id)}>
-                Delete Article
-              </ClayButton>
+              </button>
+              <button
+                onClick={() => handleDelete(deleteTarget.id)}
+                className="px-4 py-2 rounded-xl bg-rose-600 text-white font-bold text-xs hover:bg-rose-700 transition-colors shadow-md"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 3: LICENSES & CERTIFICATIONS MANAGER */}
-      {activeTab === 'certifications' && (
-        <div className="mint-card overflow-hidden space-y-4">
-          <div className="p-5 border-b border-[#90CAF9] flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-extrabold text-[#0D47A1] font-serif flex items-center gap-2">
-                <Award className="w-5 h-5 text-[#2196F3]" /> Verified Licenses & Certifications
-              </h2>
-              <p className="text-xs text-[#0D47A1]/80">
-                Manage professional credentials, attach financial model Excel files or PDFs, and link case study articles.
-              </p>
+      {/* Delete Collaboration Modal */}
+      {deleteCollabTarget && (
+        <div className="fixed inset-0 z-50 bg-navy-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="mint-card max-w-sm w-full p-6 space-y-4 shadow-xl border-rose-300">
+            <h3 className="font-extrabold text-base text-[#0D47A1]">Delete Collaboration Request</h3>
+            <p className="text-xs text-[#0D47A1]/80">
+              Delete collaboration inquiry from <strong>{deleteCollabTarget.name}</strong>?
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setDeleteCollabTarget(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-800 font-bold text-xs hover:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteCollaboration(deleteCollabTarget.id)}
+                className="px-4 py-2 rounded-xl bg-rose-600 text-white font-bold text-xs hover:bg-rose-700 transition-colors shadow-md"
+              >
+                Delete
+              </button>
             </div>
-
-            <button
-              onClick={openCreateCertModal}
-              className="px-4 py-2.5 rounded-xl bg-[#0D47A1] text-white hover:bg-[#2196F3] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm shrink-0 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" /> Add Certification
-            </button>
           </div>
-
-          {certificationsLoading ? (
-            <div className="py-16 text-center text-[#0D47A1]/60 text-sm">Loading credentials...</div>
-          ) : certificationsList.length === 0 ? (
-            <div className="py-16 text-center text-[#0D47A1]/60 text-sm flex flex-col items-center gap-2">
-              <Award className="w-8 h-8 text-[#0D47A1]/40" />
-              <span>No license credentials registered yet.</span>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-[#0D47A1]">
-                <thead className="bg-[#E3F2FD] text-[#0D47A1] font-serif uppercase tracking-wider text-[11px] border-b border-[#90CAF9]">
-                  <tr>
-                    <th className="py-3.5 px-4">Credential & Issuer</th>
-                    <th className="py-3.5 px-4">Validity Period</th>
-                    <th className="py-3.5 px-4">Linked Financial Article</th>
-                    <th className="py-3.5 px-4 text-center">Attached Model / Document</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#90CAF9]/60">
-                  {certificationsList.map((cert) => (
-                    <tr key={cert.id} className="hover:bg-[#E3F2FD]/50 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-sm text-[#0D47A1]">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-[#0D47A1] text-white flex items-center justify-center shrink-0 shadow-xs">
-                            <Award className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <span className="block font-extrabold text-xs text-[#0D47A1]">{cert.title}</span>
-                            <span className="text-[11px] text-[#2196F3] font-semibold">{cert.issuer}</span>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-xs font-mono text-[#0D47A1]/80">
-                        {cert.dates || 'Verified Credential'}
-                      </td>
-
-                      <td className="py-3.5 px-4 max-w-xs">
-                        {cert.article_id ? (
-                          <Link
-                            to={`/post/${cert.article_id}`}
-                            className="text-[#2196F3] hover:underline font-bold text-xs flex items-center gap-1.5"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            <span className="line-clamp-1">{cert.article_title || `Article #${cert.article_id}`}</span>
-                          </Link>
-                        ) : (
-                          <span className="text-[11px] text-[#0D47A1]/50 italic">No article linked</span>
-                        )}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center">
-                        <div className="flex flex-col gap-1 items-center">
-                          {(cert.excel_url || cert.attachment_url) && (
-                            <a
-                              href={(cert.excel_url || cert.attachment_url).startsWith('/uploads') ? `${backendUrl}${cert.excel_url || cert.attachment_url}` : (cert.excel_url || cert.attachment_url)}
-                              download
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200 transition-all shadow-2xs"
-                            >
-                              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
-                              <span>Model (.xlsx)</span>
-                            </a>
-                          )}
-                          {cert.cert_doc_url && (
-                            <a
-                              href={cert.cert_doc_url.startsWith('/uploads') ? `${backendUrl}${cert.cert_doc_url}` : cert.cert_doc_url}
-                              download
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold bg-blue-100 text-blue-900 border border-blue-300 hover:bg-blue-200 transition-all shadow-2xs"
-                            >
-                              <Award className="w-3.5 h-3.5 text-[#2196F3]" />
-                              <span>Certificate</span>
-                            </a>
-                          )}
-                          {!cert.excel_url && !cert.attachment_url && !cert.cert_doc_url && (
-                            <span className="text-[11px] text-[#0D47A1]/50 italic">No files attached</span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right space-x-2">
-                        <button
-                          onClick={() => openEditCertModal(cert)}
-                          className="p-1.5 rounded-lg bg-[#E3F2FD] text-[#0D47A1] hover:bg-[#90CAF9]/40 border border-[#90CAF9] transition-colors"
-                          title="Edit Credential"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteCertTarget(cert)}
-                          className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors"
-                          title="Delete Credential"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
       )}
 
-      {/* Delete Consultation Lead Modal */}
-      {deleteConsultationTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0D47A1]/40 backdrop-blur-sm">
-          <div className="bg-white border border-[#90CAF9] p-6 max-w-md w-full space-y-4 rounded-2xl shadow-xl">
-            <div className="flex items-center gap-3 text-rose-600">
-              <AlertCircle className="w-6 h-6" />
-              <h3 className="text-lg font-bold text-[#0D47A1] font-serif">Confirm Lead Record Deletion</h3>
-            </div>
+      {/* Delete Feedback Modal */}
+      {deleteFeedbackTarget && (
+        <div className="fixed inset-0 z-50 bg-navy-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="mint-card max-w-sm w-full p-6 space-y-4 shadow-xl border-rose-300">
+            <h3 className="font-extrabold text-base text-[#0D47A1]">Remove Feedback Entry</h3>
             <p className="text-xs text-[#0D47A1]/80">
-              Are you sure you want to delete consultation reservation for client <strong className="text-[#0D47A1]">"{deleteConsultationTarget.name}"</strong> ({deleteConsultationTarget.email})?
+              Delete reader feedback rated <strong>{deleteFeedbackTarget.rating} Stars</strong>?
             </p>
             <div className="flex items-center justify-end gap-3 pt-2">
-              <ClayButton variant="secondary" size="sm" onClick={() => setDeleteConsultationTarget(null)}>
+              <button
+                onClick={() => setDeleteFeedbackTarget(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-800 font-bold text-xs hover:bg-slate-200 transition-colors"
+              >
                 Cancel
-              </ClayButton>
-              <ClayButton variant="danger" size="sm" onClick={() => handleDeleteConsultation(deleteConsultationTarget.id)}>
-                Delete Lead Record
-              </ClayButton>
+              </button>
+              <button
+                onClick={() => handleDeleteFeedback(deleteFeedbackTarget.id)}
+                className="px-4 py-2 rounded-xl bg-rose-600 text-white font-bold text-xs hover:bg-rose-700 transition-colors shadow-md"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Certification Modal */}
+      {deleteCertTarget && (
+        <div className="fixed inset-0 z-50 bg-navy-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="mint-card max-w-sm w-full p-6 space-y-4 shadow-xl border-rose-300">
+            <h3 className="font-extrabold text-base text-[#0D47A1]">Confirm Certification Deletion</h3>
+            <p className="text-xs text-[#0D47A1]/80">
+              Are you sure you want to delete credential <strong>"{deleteCertTarget.title}"</strong>?
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setDeleteCertTarget(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-800 font-bold text-xs hover:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteCertification(deleteCertTarget.id)}
+                className="px-4 py-2 rounded-xl bg-rose-600 text-white font-bold text-xs hover:bg-rose-700 transition-colors shadow-md"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>
@@ -1000,216 +1404,129 @@ export const Dashboard = () => {
 
       {/* Create / Edit Certification Modal */}
       {showCertModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0D47A1]/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white border border-[#90CAF9] p-6 sm:p-8 max-w-xl w-full space-y-6 rounded-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setShowCertModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-full text-[#0D47A1]/60 hover:bg-[#E3F2FD] transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="space-y-1 border-b border-[#90CAF9] pb-3 pr-8">
-              <h3 className="text-xl font-extrabold text-[#0D47A1] font-serif">
-                {editingCert ? 'Edit Certification Credential' : 'Add New License & Certification'}
+        <div className="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="mint-card max-w-lg w-full p-6 space-y-5 shadow-2xl border-2 border-[#90CAF9] max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#90CAF9] pb-3">
+              <h3 className="font-extrabold text-lg text-[#0D47A1] font-serif">
+                {editingCert ? 'Edit Certification Credential' : 'Add New Certification Credential'}
               </h3>
-              <p className="text-xs text-[#0D47A1]/80">
-                Attach financial model Excel workbooks or documents and link published case study articles.
-              </p>
+              <button onClick={() => setShowCertModal(false)} className="p-1 rounded-full text-[#0D47A1] hover:bg-[#E3F2FD]">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <form onSubmit={handleSaveCertification} className="space-y-4">
+            <form onSubmit={handleSaveCertification} className="space-y-4 text-xs text-[#0D47A1]">
               <div>
-                <label className="block text-xs font-bold text-[#0D47A1] uppercase tracking-wider mb-1">
-                  Certification Title *
-                </label>
+                <label className="block font-bold mb-1">Certification Title *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Equity valuation and Financial modelling"
                   value={certForm.title}
                   onChange={(e) => setCertForm({ ...certForm, title: e.target.value })}
-                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#90CAF9] bg-[#E3F2FD]/30 text-[#0D47A1] focus:outline-none focus:border-[#2196F3]"
+                  className="w-full px-3.5 py-2 rounded-xl border border-[#90CAF9] bg-[#E3F2FD]/40 text-[#0D47A1]"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-[#0D47A1] uppercase tracking-wider mb-1">
-                    Issuing Organization *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Caplexus Capital / PwC India"
-                    value={certForm.issuer}
-                    onChange={(e) => setCertForm({ ...certForm, issuer: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#90CAF9] bg-[#E3F2FD]/30 text-[#0D47A1] focus:outline-none focus:border-[#2196F3]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#0D47A1] uppercase tracking-wider mb-1">
-                    Validity Dates
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Issued Jul 2026 – Expires Jul 2030"
-                    value={certForm.dates}
-                    onChange={(e) => setCertForm({ ...certForm, dates: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#90CAF9] bg-[#E3F2FD]/30 text-[#0D47A1] focus:outline-none focus:border-[#2196F3]"
-                  />
-                </div>
+              <div>
+                <label className="block font-bold mb-1">Issuing Body / Institute *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Caplexus Capital / PwC India"
+                  value={certForm.issuer}
+                  onChange={(e) => setCertForm({ ...certForm, issuer: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl border border-[#90CAF9] bg-[#E3F2FD]/40 text-[#0D47A1]"
+                />
               </div>
 
-              {/* Link Article Selection */}
               <div>
-                <label className="block text-xs font-bold text-[#0D47A1] uppercase tracking-wider mb-1">
-                  Link to Published Article (Optional)
-                </label>
+                <label className="block font-bold mb-1">Dates &amp; Validity</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Issued Jul 2026 – Expires Jul 2030"
+                  value={certForm.dates}
+                  onChange={(e) => setCertForm({ ...certForm, dates: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl border border-[#90CAF9] bg-[#E3F2FD]/40 text-[#0D47A1]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Link to Published Research Article (Optional)</label>
                 <select
                   value={certForm.article_id}
                   onChange={(e) => setCertForm({ ...certForm, article_id: e.target.value })}
-                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-[#90CAF9] bg-white text-[#0D47A1] focus:outline-none focus:border-[#2196F3] cursor-pointer"
+                  className="w-full px-3.5 py-2 rounded-xl border border-[#90CAF9] bg-white text-[#0D47A1]"
                 >
-                  <option value="">-- No Article Link --</option>
+                  <option value="">-- No Linked Article --</option>
                   {articles.map((art) => (
                     <option key={art.id} value={art.id}>
-                      #{art.id} - {art.title} ({art.category})
+                      #{art.id} - {art.title}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* UPLOAD SECTION — Two separate boxes */}
-              <div className="space-y-4 pt-2 border-t border-[#90CAF9]/60">
-
-                {/* Box 1: Excel / Financial Model */}
-                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2">
-                  <label className="block text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Financial Model (Excel)
-                    <span className="ml-auto text-[10px] font-mono text-emerald-600 normal-case">.xlsx, .xls, .csv</span>
-                  </label>
-
-                  <div className="flex items-center gap-3">
-                    <label className="px-3.5 py-2 rounded-xl bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 font-bold text-xs flex items-center gap-2 cursor-pointer transition-all">
-                      <Upload className="w-4 h-4 text-emerald-600" />
-                      <span>{uploadingExcel ? 'Uploading...' : 'Upload Excel Model'}</span>
-                      <input
-                        type="file"
-                        accept=".xlsx,.xls,.csv"
-                        onChange={handleExcelUpload}
-                        disabled={uploadingExcel}
-                        className="hidden"
-                      />
-                    </label>
-
-                    {certForm.excel_name ? (
-                      <div className="flex-1 px-3 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-900 text-xs font-mono flex items-center gap-2">
-                        <Paperclip className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span className="font-bold truncate">{certForm.excel_name}</span>
-                        <button type="button" onClick={() => setCertForm(p => ({...p, excel_url:'', excel_name:''}))} className="ml-auto text-rose-500 hover:text-rose-700"><X className="w-3.5 h-3.5" /></button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-emerald-700/60 italic">No Excel file yet.</span>
-                    )}
-                  </div>
+              {/* Excel Model File Attachment */}
+              <div className="p-3.5 rounded-xl border border-[#90CAF9] bg-[#E3F2FD]/30 space-y-2">
+                <label className="block font-bold flex items-center gap-1.5">
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
+                  Excel Financial Model (.xlsx / .xls)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleExcelUpload}
+                    className="text-xs text-[#0D47A1] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#0D47A1] file:text-white hover:file:bg-[#2196F3]"
+                  />
+                  {uploadingExcel && <RefreshCw className="w-4 h-4 animate-spin text-[#0D47A1]" />}
                 </div>
-
-                {/* Box 2: Certificate Document (PDF / Image) */}
-                <div className="p-3.5 rounded-xl bg-blue-50 border border-[#90CAF9] space-y-2">
-                  <label className="block text-xs font-bold text-[#0D47A1] uppercase tracking-wider flex items-center gap-1.5">
-                    <Award className="w-4 h-4 text-[#2196F3]" /> Certificate Document
-                    <span className="ml-auto text-[10px] font-mono text-[#2196F3]/70 normal-case">.pdf, .jpg, .png, .docx</span>
-                  </label>
-
-                  <div className="flex items-center gap-3">
-                    <label className="px-3.5 py-2 rounded-xl bg-white border border-[#90CAF9] text-[#0D47A1] hover:bg-[#E3F2FD] font-bold text-xs flex items-center gap-2 cursor-pointer transition-all">
-                      <Upload className="w-4 h-4 text-[#2196F3]" />
-                      <span>{uploadingDoc ? 'Uploading...' : 'Upload Certificate'}</span>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,.docx"
-                        onChange={handleDocUpload}
-                        disabled={uploadingDoc}
-                        className="hidden"
-                      />
-                    </label>
-
-                    {certForm.cert_doc_name ? (
-                      <div className="flex-1 px-3 py-1.5 rounded-lg bg-white border border-[#90CAF9] text-[#0D47A1] text-xs font-mono flex items-center gap-2">
-                        <Paperclip className="w-3.5 h-3.5 text-[#2196F3] shrink-0" />
-                        <span className="font-bold truncate">{certForm.cert_doc_name}</span>
-                        <button type="button" onClick={() => setCertForm(p => ({...p, cert_doc_url:'', cert_doc_name:''}))} className="ml-auto text-rose-500 hover:text-rose-700"><X className="w-3.5 h-3.5" /></button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-[#0D47A1]/60 italic">No certificate file yet.</span>
-                    )}
-                  </div>
-
-                  {/* Visual Image Preview inside the form modal */}
-                  {certForm.cert_doc_url && /\.(jpg|jpeg|png|gif|webp)$/i.test(certForm.cert_doc_url) && (
-                    <div className="mt-3 rounded-lg overflow-hidden border border-[#90CAF9] bg-white p-1 max-w-xs shadow-sm">
-                      <img 
-                        src={certForm.cert_doc_url.startsWith('/uploads') ? `${backendUrl}${certForm.cert_doc_url}` : certForm.cert_doc_url} 
-                        alt="Certificate Preview" 
-                        className="w-full h-32 object-contain bg-slate-50"
-                      />
-                    </div>
-                  )}
-                </div>
-
+                {certForm.excel_url && (
+                  <p className="text-[11px] text-emerald-800 font-semibold truncate">
+                    Attached: {certForm.excel_name || certForm.excel_url}
+                  </p>
+                )}
               </div>
 
-              <div className="flex items-center justify-between gap-3 pt-4 border-t border-[#90CAF9]">
-                {editingCert ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const certToDelete = editingCert;
-                      setShowCertModal(false);
-                      setDeleteCertTarget(certToDelete);
-                    }}
-                    className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4 text-rose-600" />
-                    <span>Remove Certification</span>
-                  </button>
-                ) : <div />}
-
-                <div className="flex items-center gap-3">
-                  <ClayButton variant="secondary" size="sm" type="button" onClick={() => setShowCertModal(false)}>
-                    Cancel
-                  </ClayButton>
-                  <ClayButton variant="primary" size="sm" type="submit">
-                    {editingCert ? 'Update Credential' : 'Save Certification'}
-                  </ClayButton>
+              {/* Certificate PDF/Image Document Attachment */}
+              <div className="p-3.5 rounded-xl border border-[#90CAF9] bg-[#E3F2FD]/30 space-y-2">
+                <label className="block font-bold flex items-center gap-1.5">
+                  <BadgeCheck className="w-4 h-4 text-amber-600" />
+                  Certificate Verification Document (.pdf / .png / .jpg)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    onChange={handleDocUpload}
+                    className="text-xs text-[#0D47A1] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-600 file:text-white hover:file:bg-amber-700"
+                  />
+                  {uploadingDoc && <RefreshCw className="w-4 h-4 animate-spin text-[#0D47A1]" />}
                 </div>
+                {certForm.cert_doc_url && (
+                  <p className="text-[11px] text-amber-900 font-semibold truncate">
+                    Attached: {certForm.cert_doc_name || certForm.cert_doc_url}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#90CAF9]">
+                <button
+                  type="button"
+                  onClick={() => setShowCertModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-800 font-bold text-xs hover:bg-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#0D47A1] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#2196F3] shadow-md"
+                >
+                  Save Certification
+                </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Certification Modal */}
-      {deleteCertTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0D47A1]/40 backdrop-blur-sm">
-          <div className="bg-white border border-[#90CAF9] p-6 max-w-md w-full space-y-4 rounded-2xl shadow-xl">
-            <div className="flex items-center gap-3 text-rose-600">
-              <AlertCircle className="w-6 h-6" />
-              <h3 className="text-lg font-bold text-[#0D47A1] font-serif">Confirm Credential Deletion</h3>
-            </div>
-            <p className="text-xs text-[#0D47A1]/80">
-              Are you sure you want to delete license credential: <strong className="text-[#0D47A1]">"{deleteCertTarget.title}"</strong>?
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <ClayButton variant="secondary" size="sm" onClick={() => setDeleteCertTarget(null)}>
-                Cancel
-              </ClayButton>
-              <ClayButton variant="danger" size="sm" onClick={() => handleDeleteCertification(deleteCertTarget.id)}>
-                Delete Credential
-              </ClayButton>
-            </div>
           </div>
         </div>
       )}

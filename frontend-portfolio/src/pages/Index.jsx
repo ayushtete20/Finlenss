@@ -7,7 +7,8 @@ import SolutionsAccordion from '../components/SolutionsAccordion';
 import ExperienceEducation from '../components/ExperienceEducation';
 import Certifications from '../components/Certifications';
 import Skills from '../components/Skills';
-import Contact from '../components/Contact';
+import Collaboration from '../components/Collaboration';
+import ArticleFeedback from '../components/ArticleFeedback';
 import WhatsAppFloatingBtn from '../components/WhatsAppFloatingBtn';
 import { ExternalLink } from 'lucide-react';
 
@@ -60,7 +61,7 @@ export const Index = () => {
               SKILLS
             </Link>
             <Link to="/contact" className="hover:text-[#2563EB] hover:scale-105 transform transition-all duration-200">
-              CONTACT
+              COLLABORATE
             </Link>
           </div>
 
@@ -78,15 +79,16 @@ export const Index = () => {
         </div>
       </header>
 
-      {/* Main Content Sections (7 Total Sections) */}
-      <main className="flex-grow">
+      {/* Main Content Sections */}
+      <main className="flex-grow space-y-16">
         <Hero />
         <ShowcaseGrid />
         <SolutionsAccordion />
         <ExperienceEducation />
         <Certifications />
         <Skills />
-        <Contact />
+        <Collaboration />
+        <ArticleFeedback />
       </main>
 
       {/* Centered Portfolio Footer */}

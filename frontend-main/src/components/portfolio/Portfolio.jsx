@@ -5,7 +5,8 @@ import SolutionsAccordion from './SolutionsAccordion';
 import ExperienceEducation from './ExperienceEducation';
 import Certifications from './Certifications';
 import Skills from './Skills';
-import Contact from './Contact';
+import Collaboration from './Collaboration';
+import ArticleFeedback from './ArticleFeedback';
 
 export const Portfolio = () => {
   return (
@@ -16,7 +17,8 @@ export const Portfolio = () => {
       <ExperienceEducation />
       <Certifications />
       <Skills />
-      <Contact />
+      <Collaboration />
+      <ArticleFeedback />
     </div>
   );
 };

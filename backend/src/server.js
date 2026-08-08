@@ -7,6 +7,8 @@ import { initDB } from './config/db.js';
 import articleRoutes from './routes/articleRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import consultationRoutes from './routes/consultationRoutes.js';
+import collaborationRoutes from './routes/collaborationRoutes.js';
+import feedbackRoutes from './routes/feedbackRoutes.js';
 import certificationRoutes from './routes/certificationRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 
@@ -37,6 +39,8 @@ initDB();
 app.use('/api/blogs', articleRoutes);
 app.use('/api/admin', authRoutes);
 app.use('/api', consultationRoutes);
+app.use('/api', collaborationRoutes);
+app.use('/api', feedbackRoutes);
 app.use('/api', certificationRoutes);
 app.use('/api', uploadRoutes);
 

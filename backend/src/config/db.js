@@ -35,8 +35,9 @@ export const initDB = () => {
       )
     `);
 
-    // Safely add is_trending column if table already exists without it
+    // Safely add is_trending and likes column if table already exists without it
     db.run(`ALTER TABLE articles ADD COLUMN is_trending INTEGER DEFAULT 0`, () => {});
+    db.run(`ALTER TABLE articles ADD COLUMN likes INTEGER DEFAULT 0`, () => {});
 
     // Create Site Visitor & Click Analytics Table
     db.run(`
@@ -55,7 +56,44 @@ export const initDB = () => {
       )
     `);
 
-    // Create Consultation Reservations Table
+    // Create Collaborations Table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS collaborations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        project_type TEXT DEFAULT 'Financial Modeling & Valuation',
+        message TEXT,
+        status TEXT DEFAULT 'Pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create Reader Feedback Table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        rating INTEGER DEFAULT 5,
+        suggestion TEXT,
+        name TEXT DEFAULT 'Anonymous Reader',
+        email TEXT,
+        article_id INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create Article Comments Table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        article_id INTEGER NOT NULL,
+        author TEXT DEFAULT 'Anonymous Analyst',
+        content TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create Consultation Reservations Table (legacy compatibility)
     db.run(`
       CREATE TABLE IF NOT EXISTS consultations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,6 +106,46 @@ export const initDB = () => {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Seed default sample collaborations and feedback if empty
+    db.get('SELECT COUNT(*) as count FROM collaborations', [], (err, row) => {
+      if (!err && row && row.count === 0) {
+        db.run(`
+          INSERT INTO collaborations (name, email, project_type, message, status)
+          VALUES ('Vikram Singhania', 'vikram.s@apexventures.in', 'Financial Modeling & Valuation', 'Requesting a customized 3-statement model & DCF valuation for our series-A SaaS pipeline.', 'Pending')
+        `);
+        db.run(`
+          INSERT INTO collaborations (name, email, project_type, message, status)
+          VALUES ('Ananya Roy', 'ananya.roy@fintechcap.com', 'Strategic Advisory & Growth', 'Looking to collaborate on macroeconomic yield curve forecasting and quantitative research.', 'In Review')
+        `);
+      }
+    });
+
+    db.get('SELECT COUNT(*) as count FROM feedback', [], (err, row) => {
+      if (!err && row && row.count === 0) {
+        db.run(`
+          INSERT INTO feedback (rating, suggestion, name, email)
+          VALUES (5, 'The Dabur 3-statement model and DCF breakdown are world-class! Would love to see an FMCG vs SaaS comparative valuation next.', 'Rahul Mehra', 'rahul.mehra@equityresearch.org')
+        `);
+        db.run(`
+          INSERT INTO feedback (rating, suggestion, name, email)
+          VALUES (5, 'Outstanding macroeconomic insights. Clean financial models and thorough working capital notes.', 'Priya Sharma', 'priya@capitaladvisors.in')
+        `);
+      }
+    });
+
+    db.get('SELECT COUNT(*) as count FROM comments', [], (err, row) => {
+      if (!err && row && row.count === 0) {
+        db.run(`
+          INSERT INTO comments (article_id, author, content)
+          VALUES (1, 'Kavita Patel, Senior Equity Analyst', 'Brilliant DCF integration! The sensitivity matrix between revenue growth and operating margin makes this model immediately actionable.')
+        `);
+        db.run(`
+          INSERT INTO comments (article_id, author, content)
+          VALUES (1, 'Rohan Verma', 'Excellent working capital assumptions. The asset-light approach Dabur is maintaining makes their free cash flow yield remarkably resilient.')
+        `);
+      }
+    });
 
     // Create Licenses & Certifications Table
     db.run(`
