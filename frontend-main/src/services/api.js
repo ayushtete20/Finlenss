@@ -575,7 +575,7 @@ export const deleteConsultation = async (id) => {
 };
 
 export const loginAdmin = async (password) => {
-  if (password === 'admin123' || password === import.meta.env.VITE_ADMIN_PASSWORD) {
+  if (password === 'joy@2001' || password === import.meta.env.VITE_ADMIN_PASSWORD) {
     setAuthToken('supabase_admin_token_2026');
     return { success: true, token: 'supabase_admin_token_2026' };
   }
