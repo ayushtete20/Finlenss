@@ -138,13 +138,15 @@ const setAuthToken = (token) => {
     try {
       localStorage.setItem('blog_platform_admin_token', token);
       sessionStorage.setItem('blog_platform_admin_token', token);
+      window.dispatchEvent(new Event('auth-state-change'));
     } catch (e) {}
   }
 };
 
 export const isAdminLoggedIn = () => {
   if (typeof window === 'undefined') return false;
-  return Boolean(getAuthToken());
+  const token = getAuthToken();
+  return Boolean(token && token.trim().length > 0);
 };
 
 export const logoutAdmin = () => {
@@ -152,6 +154,9 @@ export const logoutAdmin = () => {
     try {
       localStorage.removeItem('blog_platform_admin_token');
       sessionStorage.removeItem('blog_platform_admin_token');
+      localStorage.removeItem('admin_token');
+      sessionStorage.removeItem('admin_token');
+      window.dispatchEvent(new Event('auth-state-change'));
     } catch (e) {}
   }
 };

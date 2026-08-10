@@ -10,14 +10,23 @@ export const Header = ({ onSearchChange, searchTerm }) => {
   const [loggedIn, setLoggedIn] = useState(isAdminLoggedIn());
 
   useEffect(() => {
-    setLoggedIn(isAdminLoggedIn());
+    const checkAuth = () => {
+      setLoggedIn(isAdminLoggedIn());
+    };
+    checkAuth();
+    window.addEventListener('storage', checkAuth);
+    window.addEventListener('auth-state-change', checkAuth);
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+      window.removeEventListener('auth-state-change', checkAuth);
+    };
   }, [location.pathname]);
 
   const handleLogout = () => {
     removeAuthToken();
     setLoggedIn(false);
     setIsMobileMenuOpen(false);
-    navigate('/admin/login');
+    navigate('/');
   };
 
   const handleScrollToTopOrHome = (e) => {
