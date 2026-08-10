@@ -14,25 +14,48 @@ export const Header = ({ onSearchChange, searchTerm }) => {
     navigate('/');
   };
 
+  const handleScrollToTopOrHome = (e) => {
+    e.preventDefault();
+    setIsMobileMenuOpen(false);
+    if (location.pathname === '/') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      navigate('/');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 50);
+    }
+  };
+
   return (
     <header className="bg-[#E3F2FD]/90 border-b border-[#90CAF9] sticky top-0 z-50 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo - Square Box + Serif Finlenss. */}
-          <Link to="/" className="flex items-center gap-2.5 group">
+          <a
+            href="/"
+            onClick={handleScrollToTopOrHome}
+            className="flex items-center gap-2.5 group cursor-pointer"
+            title="Finlenss — Back to top"
+          >
             <div className="w-8 h-8 rounded border-2 border-[#0D47A1] bg-[#E3F2FD] flex items-center justify-center text-[#0D47A1] font-bold group-hover:bg-[#0D47A1] group-hover:text-white transition-colors">
               <TrendingUp className="w-5 h-5 stroke-[2.5]" />
             </div>
             <span className="text-2xl font-extrabold text-[#0D47A1] font-serif tracking-tight">
               Finlenss.
             </span>
-          </Link>
+          </a>
 
           {/* Navigation Links */}
           <nav className="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-widest text-[#0D47A1]">
-            <Link to="/" className="hover:text-[#2196F3] transition-colors">
+            <a
+              href="/"
+              onClick={handleScrollToTopOrHome}
+              className="hover:text-[#2196F3] transition-colors cursor-pointer"
+            >
               Insights
-            </Link>
+            </a>
             <a href="#markets" className="hover:text-[#2196F3] transition-colors">
               Markets
             </a>
@@ -99,9 +122,13 @@ export const Header = ({ onSearchChange, searchTerm }) => {
       {/* Mobile Drawer */}
       {isMobileMenuOpen && (
         <div className="md:hidden bg-[#E3F2FD] border-b border-[#90CAF9] px-4 pt-3 pb-6 space-y-3 text-xs font-bold uppercase tracking-widest text-[#0D47A1]">
-          <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="block py-2">
+          <a
+            href="/"
+            onClick={handleScrollToTopOrHome}
+            className="block py-2 cursor-pointer"
+          >
             Insights
-          </Link>
+          </a>
           <a
             href="#portfolio"
             onClick={() => setIsMobileMenuOpen(false)}

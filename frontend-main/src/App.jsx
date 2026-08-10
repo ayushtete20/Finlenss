@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/UI/Header';
 import Footer from './components/UI/Footer';
 import Home from './components/pages/Public/Home';
@@ -12,6 +12,14 @@ import FinancialBackground from './components/UI/FinancialBackground';
 import WhatsAppFloatingBtn from './components/UI/WhatsAppFloatingBtn';
 import { trackVisit } from './services/api';
 
+const ScrollToTopOnRoute = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [pathname]);
+  return null;
+};
+
 export const App = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -21,6 +29,7 @@ export const App = () => {
 
   return (
     <Router>
+      <ScrollToTopOnRoute />
       <div className="relative flex flex-col min-h-screen text-[#0D47A1] font-sans antialiased">
         <FinancialBackground />
         <Header onSearchChange={setSearchTerm} searchTerm={searchTerm} />

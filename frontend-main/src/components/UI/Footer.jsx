@@ -1,22 +1,38 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { TrendingUp, Globe, Shield, ExternalLink } from 'lucide-react';
 
 export const Footer = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleScrollToTop = (e) => {
+    e.preventDefault();
+    if (location.pathname === '/') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      navigate('/');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 50);
+    }
+  };
+
   return (
     <footer className="bg-[#E3F2FD] border-t border-[#90CAF9] text-[#0D47A1] mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           {/* Brand Col */}
           <div className="md:col-span-1">
-            <Link to="/" className="flex items-center gap-2.5 mb-4 group">
+            <a href="/" onClick={handleScrollToTop} className="flex items-center gap-2.5 mb-4 group cursor-pointer" title="Finlenss — Back to top">
               <div className="w-7 h-7 rounded border-2 border-[#0D47A1] flex items-center justify-center text-[#0D47A1] font-bold group-hover:bg-[#0D47A1] group-hover:text-white transition-colors">
                 <TrendingUp className="w-4 h-4 stroke-[2.5]" />
               </div>
               <span className="text-xl font-bold text-[#0D47A1] font-serif">
                 Finlenss.
               </span>
-            </Link>
+            </a>
             <p className="text-xs text-[#0D47A1]/70 leading-relaxed mb-4">
               Institutional financial analysis, micro-investing trends, and personal wealth psychology.
             </p>
@@ -28,10 +44,10 @@ export const Footer = () => {
               Topics
             </h4>
             <ul className="space-y-2 text-xs font-medium text-[#0D47A1]/70">
-              <li><Link to="/" className="hover:text-[#0D47A1] transition-colors">Macroeconomics</Link></li>
-              <li><Link to="/" className="hover:text-[#0D47A1] transition-colors">Decentralized Credit</Link></li>
-              <li><Link to="/" className="hover:text-[#0D47A1] transition-colors">Micro-Investing</Link></li>
-              <li><Link to="/" className="hover:text-[#0D47A1] transition-colors">Personal Finance</Link></li>
+              <li><a href="/" onClick={handleScrollToTop} className="hover:text-[#0D47A1] transition-colors cursor-pointer">Macroeconomics</a></li>
+              <li><a href="/" onClick={handleScrollToTop} className="hover:text-[#0D47A1] transition-colors cursor-pointer">Decentralized Credit</a></li>
+              <li><a href="/" onClick={handleScrollToTop} className="hover:text-[#0D47A1] transition-colors cursor-pointer">Micro-Investing</a></li>
+              <li><a href="/" onClick={handleScrollToTop} className="hover:text-[#0D47A1] transition-colors cursor-pointer">Personal Finance</a></li>
             </ul>
           </div>
 
