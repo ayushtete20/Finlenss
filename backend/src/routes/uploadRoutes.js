@@ -35,7 +35,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const allowedExtensions = /^\.(xlsx|xls|csv|pdf|jpg|jpeg|png|gif|doc|docx)$/i;
+const allowedExtensions = /^\.(xlsx|xls|csv|pdf|jpg|jpeg|png|gif|webp|svg|doc|docx)$/i;
 
 const upload = multer({
   storage,

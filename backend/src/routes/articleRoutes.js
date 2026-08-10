@@ -8,6 +8,7 @@ import {
   trackSiteVisit,
   trackArticleClick,
   resetAllViews,
+  resetArticleViewsById,
   getSiteStats,
   toggleTrending,
   getAllCategories,
@@ -31,6 +32,7 @@ router.get('/categories/all', getAllCategories);
 router.post('/track-visit', trackSiteVisit);
 router.post('/stats/visit', trackSiteVisit);
 router.post('/reset-views', resetAllViews);
+router.post('/:id/reset-views', resetArticleViewsById);
 router.get('/stats/summary', getSiteStats);
 router.post('/:id/click', trackArticleClick);
 router.post('/:id/track', trackArticleClick);

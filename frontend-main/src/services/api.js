@@ -155,23 +155,9 @@ export const removeAuthToken = logoutAdmin;
 // --- SECTION 1: SUPABASE DIRECT SDK DATA FETCHING ---
 
 const checkAndResetViewsOnce = () => {
-  if (typeof window === 'undefined') return;
-  try {
-    const hasReset = localStorage.getItem('article_views_reset_zero_v1');
-    if (!hasReset) {
-      const cached = localStorage.getItem('custom_articles_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed)) {
-          const resetList = parsed.map(a => ({ ...a, views: 0 }));
-          localStorage.setItem('custom_articles_cache', JSON.stringify(resetList));
-        }
-      }
-      localStorage.setItem('article_views_reset_zero_v1', 'true');
-    }
-  } catch (e) {}
+  // Legacy migration check - preserves actual visit counts
 };
-checkAndResetViewsOnce();
+
 
 const getStoredCustomArticles = () => {
   if (typeof window === 'undefined') return null;
@@ -732,6 +718,42 @@ export const trackArticleClick = async (id) => {
   return updatedCount;
 };
 
+// Reset a single article's view counter to 0
+export const resetArticleViews = async (id) => {
+  const numericId = parseInt(id, 10);
+  const targetId = isNaN(numericId) ? id : numericId;
+
+  // 1. In-memory fallback
+  const fallback = fallbackArticles.find(a => String(a.id) === String(id));
+  if (fallback) fallback.views = 0;
+
+  // 2. localStorage
+  try {
+    let localCache = getStoredCustomArticles();
+    if (localCache) {
+      const idx = localCache.findIndex(a => String(a.id) === String(id));
+      if (idx !== -1) {
+        localCache[idx] = { ...localCache[idx], views: 0 };
+        setStoredCustomArticles(localCache);
+      }
+    }
+  } catch (e) {}
+
+  // 3. Supabase
+  try {
+    await supabase.from('articles').update({ views: 0 }).eq('id', targetId);
+  } catch (e) {
+    console.warn('Supabase resetArticleViews notice:', e);
+  }
+
+  // 4. Backend
+  try {
+    await safeFetchJson(`${baseUrl}/blogs/${id}/reset-views`, { method: 'POST' });
+  } catch (e) {}
+
+  return { success: true, message: `Article #${id} views reset to 0.` };
+};
+
 // Reset all views and visits to 0
 export const resetAllCounters = async () => {
   // 1. Reset localStorage
@@ -764,11 +786,111 @@ export const resetAllCounters = async () => {
     await safeFetchJson(`${baseUrl}/blogs/reset-views`, { method: 'POST' });
   } catch (e) {}
 
-  return { success: true, message: 'All view and visit counters have been reset to 0.' };
+  return { success: true, message: 'All article views and visit counters have been reset to 0.' };
 };
 
-// File Upload via Supabase Storage SDK
+// Direct Image Upload with Supabase Storage, Backend, and Base64 Fallback
+export const uploadImage = async (file) => {
+  if (!file) throw new Error('No image file selected.');
+  if (file.type && !file.type.startsWith('image/')) {
+    throw new Error('Please select a valid image file (.png, .jpg, .jpeg, .webp, .svg, .gif).');
+  }
+
+  // 1. Try Supabase Storage buckets (try 'article-images' first, then 'financial-models')
+  try {
+    const cleanExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const filename = `img_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${cleanExt}`;
+    
+    // Try bucket 'article-images'
+    let uploadRes = await supabase.storage.from('article-images').upload(filename, file, {
+      cacheControl: '3600',
+      upsert: true
+    });
+    let bucket = 'article-images';
+
+    // If 'article-images' doesn't exist, try 'financial-models'
+    if (uploadRes.error) {
+      const fbRes = await supabase.storage.from('financial-models').upload(filename, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+      if (!fbRes.error && fbRes.data) {
+        uploadRes = fbRes;
+        bucket = 'financial-models';
+      }
+    }
+
+    if (!uploadRes.error && uploadRes.data) {
+      const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(filename);
+      if (publicUrlData && publicUrlData.publicUrl) {
+        return {
+          message: 'Image uploaded to Supabase Storage',
+          url: publicUrlData.publicUrl,
+          filename: filename,
+          originalName: file.name
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Supabase image storage upload notice:', err);
+  }
+
+  // 2. Try Backend API /api/upload
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = getAuthToken();
+    const res = await fetch(`${baseUrl}/upload`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: formData
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.url) {
+        return data;
+      }
+    }
+  } catch (err) {
+    console.warn('Backend image upload notice:', err);
+  }
+
+  // 3. Persistent Base64 Data URL Fallback (100% persistent across reloads and client devices)
+  try {
+    const base64Url = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (e) => reject(new Error('Failed to read image file.'));
+      reader.readAsDataURL(file);
+    });
+    return {
+      message: 'Image processed as persistent Data URL',
+      url: base64Url,
+      filename: file.name,
+      originalName: file.name
+    };
+  } catch (e) {
+    console.warn('Base64 image conversion notice:', e);
+  }
+
+  // 4. Local Object URL fallback
+  const localUrl = URL.createObjectURL(file);
+  return {
+    message: 'Image attached locally',
+    url: localUrl,
+    filename: file.name,
+    originalName: file.name
+  };
+};
+
+// General File Upload (Documents, Excel, PDFs, etc.)
 export const uploadFile = async (file) => {
+  if (file && file.type && file.type.startsWith('image/')) {
+    return await uploadImage(file);
+  }
+
   try {
     const filename = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const { data, error } = await supabase.storage.from('financial-models').upload(filename, file);

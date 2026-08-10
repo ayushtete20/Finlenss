@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   fetchArticles,
+  createArticle,
   deleteArticle,
   isAdminLoggedIn,
   fetchSiteStats,
@@ -23,7 +24,9 @@ import {
   updateCertification,
   deleteCertification,
   uploadFile,
-  resetAllCounters
+  uploadImage,
+  resetAllCounters,
+  resetArticleViews
 } from '../../../services/api';
 import { supabase } from '../../../utils/supabaseClient';
 import {
@@ -63,7 +66,11 @@ import {
   MessageCircle,
   Star,
   MessageSquareHeart,
-  Briefcase
+  Briefcase,
+  Image as ImageIcon,
+  UploadCloud,
+  Link2,
+  Check
 } from 'lucide-react';
 import ClayButton from '../../UI/ClayButton';
 
@@ -123,6 +130,24 @@ export const Dashboard = () => {
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [deleteCertTarget, setDeleteCertTarget] = useState(null);
+
+  // Quick Post Article Modal state (with Picture Link & Direct File Upload)
+  const [showQuickPostModal, setShowQuickPostModal] = useState(false);
+  const [quickPostForm, setQuickPostForm] = useState({
+    title: '',
+    category: 'Stocks',
+    thumbnail_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80',
+    excerpt: '',
+    content: '',
+    author: 'Tushar Singh, CFA',
+    read_time: '5 min read'
+  });
+  const [quickPostImageMode, setQuickPostImageMode] = useState('upload'); // 'upload' | 'link'
+  const [quickPostUploadingImage, setQuickPostUploadingImage] = useState(false);
+  const [quickPostUploadedName, setQuickPostUploadedName] = useState('');
+  const [quickPostSubmitting, setQuickPostSubmitting] = useState(false);
+  const [quickPostDragOver, setQuickPostDragOver] = useState(false);
+  const quickPostFileInputRef = useRef(null);
 
   const [notification, setNotification] = useState(null);
   const navigate = useNavigate();
@@ -340,6 +365,66 @@ export const Dashboard = () => {
       setTimeout(() => setNotification(null), 3500);
     } catch (err) {
       alert('Failed to reset counters: ' + err.message);
+    }
+  };
+
+  const handleResetSingleArticleViews = async (article) => {
+    if (!window.confirm(`Reset view counter for "${article.title}" to 0?`)) return;
+    try {
+      await resetArticleViews(article.id);
+      setNotification(`✅ View counter for "${article.title}" reset to 0.`);
+      loadData();
+      setTimeout(() => setNotification(null), 3500);
+    } catch (err) {
+      alert('Failed to reset article views: ' + err.message);
+    }
+  };
+
+  const handleQuickPostImageUpload = async (file) => {
+    if (!file) return;
+    if (file.type && !file.type.startsWith('image/')) {
+      alert('Please select a valid image file (.png, .jpg, .jpeg, .webp, .svg, .gif)');
+      return;
+    }
+    setQuickPostUploadingImage(true);
+    try {
+      const res = await uploadImage(file);
+      setQuickPostForm(prev => ({ ...prev, thumbnail_url: res.url }));
+      setQuickPostUploadedName(res.originalName || file.name);
+    } catch (err) {
+      alert('Image upload failed: ' + err.message);
+    } finally {
+      setQuickPostUploadingImage(false);
+    }
+  };
+
+  const handleQuickPostSubmit = async (e) => {
+    e.preventDefault();
+    if (!quickPostForm.title.trim() || !quickPostForm.content.trim()) {
+      alert('Article Title and Content are required fields.');
+      return;
+    }
+    setQuickPostSubmitting(true);
+    try {
+      await createArticle(quickPostForm);
+      setShowQuickPostModal(false);
+      setQuickPostForm({
+        title: '',
+        category: categoriesList[0]?.name || 'Stocks',
+        thumbnail_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80',
+        excerpt: '',
+        content: '',
+        author: 'Tushar Singh, CFA',
+        read_time: '5 min read'
+      });
+      setQuickPostUploadedName('');
+      setNotification('🎉 Financial article published successfully with cover picture!');
+      loadData();
+      setTimeout(() => setNotification(null), 3500);
+    } catch (err) {
+      alert('Failed to post article: ' + err.message);
+    } finally {
+      setQuickPostSubmitting(false);
     }
   };
 
@@ -603,11 +688,18 @@ export const Dashboard = () => {
             </ClayButton>
           )}
           <button
+            onClick={() => setShowQuickPostModal(true)}
+            className="px-4 py-2 rounded-xl bg-[#0D47A1] text-white hover:bg-[#2196F3] font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+            title="Post a new financial article directly with picture link or file upload"
+          >
+            <Plus className="w-4 h-4" /> Quick Post Article
+          </button>
+          <button
             onClick={handleResetCounters}
             className="px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 hover:bg-amber-100 font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
             title="Reset all article views and website visits to 0"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-amber-700" /> Reset Views & Likes
+            <RefreshCw className="w-3.5 h-3.5 text-amber-700" /> Reset Views &amp; Likes
           </button>
           <Link to="/admin/seed">
             <button className="px-3.5 py-2 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 hover:bg-rose-100 font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
@@ -615,8 +707,8 @@ export const Dashboard = () => {
             </button>
           </Link>
           <Link to="/admin/editor">
-            <ClayButton variant="secondary" size="md" icon={Plus}>
-              Create New Article
+            <ClayButton variant="secondary" size="md" icon={FileEdit}>
+              Full Studio Editor
             </ClayButton>
           </Link>
         </div>
@@ -937,15 +1029,22 @@ export const Dashboard = () => {
                           <td className="py-3.5 px-4 text-[#0D47A1]/80">
                             {new Date(article.created_at || Date.now()).toLocaleDateString()}
                           </td>
-                          <td className="py-3.5 px-4 text-right space-x-2">
+                          <td className="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
+                            <button
+                              onClick={() => handleResetSingleArticleViews(article)}
+                              className="p-1.5 rounded-lg bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 transition-colors cursor-pointer"
+                              title={`Reset views for "${article.title}" to 0`}
+                            >
+                              <RefreshCw className="w-4 h-4 text-amber-700" />
+                            </button>
                             <Link to={`/admin/editor/${article.id}`}>
-                              <button className="p-1.5 rounded-lg bg-[#E3F2FD] text-[#0D47A1] hover:bg-[#90CAF9]/40 border border-[#90CAF9] transition-colors" title="Edit Article">
+                              <button className="p-1.5 rounded-lg bg-[#E3F2FD] text-[#0D47A1] hover:bg-[#90CAF9]/40 border border-[#90CAF9] transition-colors cursor-pointer" title="Edit Article in Studio">
                                 <Edit3 className="w-4 h-4" />
                               </button>
                             </Link>
                             <button
                               onClick={() => setDeleteTarget(article)}
-                              className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors"
+                              className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
                               title="Delete Article"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1530,8 +1629,280 @@ export const Dashboard = () => {
           </div>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* QUICK POST ARTICLE MODAL (WITH PICTURE LINK OR DIRECT FILE UPLOAD)        */}
+      {/* ========================================================================= */}
+      {showQuickPostModal && (
+        <div className="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="mint-card max-w-2xl w-full p-6 sm:p-7 space-y-5 shadow-2xl border-2 border-[#90CAF9] max-h-[92vh] overflow-y-auto animate-fade-in">
+            <div className="flex items-center justify-between border-b border-[#90CAF9] pb-3">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#E3F2FD] text-[#0D47A1] text-[11px] font-extrabold uppercase tracking-wider mb-1">
+                  <Sparkles className="w-3.5 h-3.5 text-[#2196F3]" /> Dashboard Quick Post
+                </div>
+                <h3 className="font-extrabold text-xl text-[#0D47A1] font-serif">
+                  Post New Financial Insight Article
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowQuickPostModal(false)}
+                className="p-1.5 rounded-full text-[#0D47A1] hover:bg-[#E3F2FD] transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickPostSubmit} className="space-y-4 text-xs text-[#0D47A1]">
+              {/* Article Title */}
+              <div>
+                <label className="block font-bold mb-1 uppercase tracking-wider text-[11px]">
+                  Article Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Macro Analysis: Sovereign Debt Yield Spreads & Rate Pivot"
+                  value={quickPostForm.title}
+                  onChange={(e) => setQuickPostForm({ ...quickPostForm, title: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#90CAF9] bg-white text-[#0D47A1] font-serif font-bold text-sm focus:outline-none focus:border-[#2196F3]"
+                />
+              </div>
+
+              {/* Category, Author & Read Time */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold mb-1 uppercase tracking-wider text-[10px]">
+                    Category *
+                  </label>
+                  <select
+                    value={quickPostForm.category}
+                    onChange={(e) => setQuickPostForm({ ...quickPostForm, category: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-[#90CAF9] bg-white text-[#0D47A1] focus:outline-none focus:border-[#2196F3]"
+                  >
+                    {(categoriesList.length > 0 ? categoriesList.map(c => c.name) : ['Stocks', 'Cryptocurrency', 'Macroeconomics', 'Wealth Management', 'DeFi 3.0', 'Financial Valuation']).map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold mb-1 uppercase tracking-wider text-[10px]">
+                    Author Byline
+                  </label>
+                  <input
+                    type="text"
+                    value={quickPostForm.author}
+                    onChange={(e) => setQuickPostForm({ ...quickPostForm, author: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-[#90CAF9] bg-white text-[#0D47A1] focus:outline-none focus:border-[#2196F3]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold mb-1 uppercase tracking-wider text-[10px]">
+                    Read Time
+                  </label>
+                  <input
+                    type="text"
+                    value={quickPostForm.read_time}
+                    onChange={(e) => setQuickPostForm({ ...quickPostForm, read_time: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-[#90CAF9] bg-white text-[#0D47A1] focus:outline-none focus:border-[#2196F3]"
+                  />
+                </div>
+              </div>
+
+              {/* PICTURE POSTING OPTION: DIRECT FILE UPLOAD OR LINK */}
+              <div className="p-4 rounded-xl bg-[#E3F2FD]/50 border border-[#90CAF9] space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#90CAF9]/60 pb-2">
+                  <span className="font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-[#2196F3]" /> Post Cover Picture
+                  </span>
+
+                  <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-[#90CAF9] text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setQuickPostImageMode('upload')}
+                      className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                        quickPostImageMode === 'upload'
+                          ? 'bg-[#0D47A1] text-white shadow-xs'
+                          : 'text-[#0D47A1] hover:bg-[#E3F2FD]'
+                      }`}
+                    >
+                      <UploadCloud className="w-3 h-3 inline mr-1" /> File Upload
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setQuickPostImageMode('link')}
+                      className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                        quickPostImageMode === 'link'
+                          ? 'bg-[#0D47A1] text-white shadow-xs'
+                          : 'text-[#0D47A1] hover:bg-[#E3F2FD]'
+                      }`}
+                    >
+                      <Link2 className="w-3 h-3 inline mr-1" /> Image Link
+                    </button>
+                  </div>
+                </div>
+
+                {quickPostImageMode === 'upload' ? (
+                  <div className="space-y-2">
+                    <div
+                      onDragOver={(e) => { e.preventDefault(); setQuickPostDragOver(true); }}
+                      onDragLeave={(e) => { e.preventDefault(); setQuickPostDragOver(false); }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setQuickPostDragOver(false);
+                        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                          handleQuickPostImageUpload(e.dataTransfer.files[0]);
+                        }
+                      }}
+                      onClick={() => quickPostFileInputRef.current && quickPostFileInputRef.current.click()}
+                      className={`p-4 rounded-xl border-2 border-dashed text-center cursor-pointer transition-all ${
+                        quickPostDragOver ? 'border-[#2196F3] bg-[#E3F2FD]' : 'border-[#90CAF9] bg-white hover:bg-[#E3F2FD]/30'
+                      }`}
+                    >
+                      <input
+                        ref={quickPostFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => e.target.files && handleQuickPostImageUpload(e.target.files[0])}
+                        className="hidden"
+                      />
+                      <div className="flex items-center justify-center gap-2">
+                        {quickPostUploadingImage ? (
+                          <RefreshCw className="w-5 h-5 animate-spin text-[#0D47A1]" />
+                        ) : (
+                          <UploadCloud className="w-5 h-5 text-[#2196F3]" />
+                        )}
+                        <span className="font-bold text-xs">
+                          {quickPostUploadingImage ? 'Uploading Picture...' : 'Click to Browse or Drag & Drop Image File'}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-[#0D47A1]/60 block mt-1">
+                        PNG, JPG, JPEG, WEBP, SVG, GIF supported
+                      </span>
+                    </div>
+
+                    {quickPostUploadedName && (
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-900 text-[11px] font-semibold">
+                        <span className="flex items-center gap-1.5 truncate">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          Attached: {quickPostUploadedName}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuickPostUploadedName('');
+                            setQuickPostForm(prev => ({ ...prev, thumbnail_url: '' }));
+                          }}
+                          className="text-rose-600 hover:underline font-bold ml-2"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type="url"
+                      placeholder="https://images.unsplash.com/... or any picture URL"
+                      value={quickPostForm.thumbnail_url}
+                      onChange={(e) => setQuickPostForm({ ...quickPostForm, thumbnail_url: e.target.value })}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-[#90CAF9] bg-white text-[#0D47A1] font-mono focus:outline-none focus:border-[#2196F3]"
+                    />
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { label: 'Stock Markets', url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80' },
+                        { label: 'Crypto', url: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=1000&q=80' },
+                        { label: 'Valuation', url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1000&q=80' },
+                        { label: 'Wealth', url: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1000&q=80' }
+                      ].map((preset, i) => (
+                        <button
+                          type="button"
+                          key={i}
+                          onClick={() => setQuickPostForm({ ...quickPostForm, thumbnail_url: preset.url })}
+                          className="px-2 py-0.5 text-[10px] rounded-md bg-white border border-[#90CAF9] text-[#0D47A1] hover:text-[#2196F3] hover:border-[#2196F3] cursor-pointer"
+                        >
+                          + {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Picture Preview */}
+                {quickPostForm.thumbnail_url && (
+                  <div className="relative rounded-lg overflow-hidden border border-[#90CAF9] h-28 bg-slate-900 shadow-2xs">
+                    <img
+                      src={quickPostForm.thumbnail_url}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80';
+                      }}
+                    />
+                    <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-[#0D47A1]/85 text-white text-[9px] font-bold uppercase">
+                      Picture Preview
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Excerpt */}
+              <div>
+                <label className="block font-bold mb-1 uppercase tracking-wider text-[10px]">
+                  Summary Excerpt (Card Preview)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Brief summary snippet for article cards..."
+                  value={quickPostForm.excerpt}
+                  onChange={(e) => setQuickPostForm({ ...quickPostForm, excerpt: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-[#90CAF9] bg-white text-[#0D47A1] focus:outline-none focus:border-[#2196F3]"
+                />
+              </div>
+
+              {/* Full Content Body */}
+              <div>
+                <label className="block font-bold mb-1 uppercase tracking-wider text-[10px]">
+                  Full Article Body (Markdown supported) *
+                </label>
+                <textarea
+                  rows={6}
+                  required
+                  placeholder="# Article Headline&#10;&#10;Write your in-depth financial analysis here..."
+                  value={quickPostForm.content}
+                  onChange={(e) => setQuickPostForm({ ...quickPostForm, content: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl border border-[#90CAF9] bg-white text-[#0D47A1] font-mono leading-relaxed focus:outline-none focus:border-[#2196F3]"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#90CAF9]">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickPostModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-800 font-bold text-xs hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={quickPostSubmitting}
+                  className="px-5 py-2 rounded-xl bg-[#0D47A1] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#2196F3] shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {quickPostSubmitting ? 'Publishing...' : 'Publish Article'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default Dashboard;
+

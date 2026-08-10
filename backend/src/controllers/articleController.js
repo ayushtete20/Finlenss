@@ -85,6 +85,17 @@ export const resetAllViews = (req, res) => {
   });
 };
 
+// Reset single article views to 0
+export const resetArticleViewsById = (req, res) => {
+  const { id } = req.params;
+  db.run('UPDATE articles SET views = 0 WHERE id = ?', [id], function(err) {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to reset article views', details: err.message });
+    }
+    res.json({ success: true, message: `Article #${id} views reset to 0` });
+  });
+};
+
 // Get analytics stats for Owner Dashboard
 export const getSiteStats = (req, res) => {
   db.all("SELECT key, value FROM site_stats", [], (err, rows) => {
