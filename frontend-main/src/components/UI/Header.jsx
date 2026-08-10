@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { TrendingUp, ShieldCheck, LogOut, Menu, X, LayoutDashboard, Search } from 'lucide-react';
 import { isAdminLoggedIn, removeAuthToken } from '../../services/api';
@@ -7,11 +7,17 @@ export const Header = ({ onSearchChange, searchTerm }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const loggedIn = isAdminLoggedIn();
+  const [loggedIn, setLoggedIn] = useState(isAdminLoggedIn());
+
+  useEffect(() => {
+    setLoggedIn(isAdminLoggedIn());
+  }, [location.pathname]);
 
   const handleLogout = () => {
     removeAuthToken();
-    navigate('/');
+    setLoggedIn(false);
+    setIsMobileMenuOpen(false);
+    navigate('/admin/login');
   };
 
   const handleScrollToTopOrHome = (e) => {

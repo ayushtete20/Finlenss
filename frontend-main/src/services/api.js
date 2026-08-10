@@ -129,27 +129,22 @@ export const fallbackCertifications = [
 
 
 const getAuthToken = () => {
-  if (typeof window === 'undefined') return 'supabase_admin_token_2026';
-  let token = localStorage.getItem('blog_platform_admin_token') || sessionStorage.getItem('blog_platform_admin_token');
-  if (!token) {
-    token = 'supabase_admin_token_2026';
-    try {
-      localStorage.setItem('blog_platform_admin_token', token);
-    } catch (e) {}
-  }
-  return token;
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('blog_platform_admin_token') || sessionStorage.getItem('blog_platform_admin_token');
 };
 
 const setAuthToken = (token) => {
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem('blog_platform_admin_token', token);
+      sessionStorage.setItem('blog_platform_admin_token', token);
     } catch (e) {}
   }
 };
 
 export const isAdminLoggedIn = () => {
-  return true; // Always authorized for owner management portal access
+  if (typeof window === 'undefined') return false;
+  return Boolean(getAuthToken());
 };
 
 export const logoutAdmin = () => {

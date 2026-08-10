@@ -26,7 +26,8 @@ import {
   uploadFile,
   uploadImage,
   resetAllCounters,
-  resetArticleViews
+  resetArticleViews,
+  removeAuthToken
 } from '../../../services/api';
 import { supabase } from '../../../utils/supabaseClient';
 import {
@@ -71,7 +72,8 @@ import {
   UploadCloud,
   Link2,
   Check,
-  FileEdit
+  FileEdit,
+  LogOut
 } from 'lucide-react';
 import ClayButton from '../../UI/ClayButton';
 
@@ -712,6 +714,16 @@ export const Dashboard = () => {
               Full Studio Editor
             </ClayButton>
           </Link>
+          <button
+            onClick={() => {
+              removeAuthToken();
+              navigate('/admin/login');
+            }}
+            className="px-3.5 py-2 rounded-xl bg-slate-100 border border-slate-300 text-slate-700 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 font-bold text-xs flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+            title="Sign out of Admin Portal"
+          >
+            <LogOut className="w-3.5 h-3.5" /> Sign Out
+          </button>
         </div>
       </div>
 
