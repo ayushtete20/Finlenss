@@ -70,7 +70,8 @@ import {
   Image as ImageIcon,
   UploadCloud,
   Link2,
-  Check
+  Check,
+  FileEdit
 } from 'lucide-react';
 import ClayButton from '../../UI/ClayButton';
 
