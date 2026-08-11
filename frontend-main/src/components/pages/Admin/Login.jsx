@@ -92,17 +92,6 @@ export const Login = () => {
           >
             {loading ? 'Authenticating...' : 'Authenticate Access'}
           </ClayButton>
-
-          <button
-            type="button"
-            onClick={async () => {
-              await loginAdmin('joy@2001');
-              navigate('/admin/dashboard');
-            }}
-            className="w-full py-2.5 rounded-xl border border-[#90CAF9] bg-[#E3F2FD] hover:bg-[#90CAF9]/40 text-[#0D47A1] font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
-          >
-            <ShieldCheck className="w-4 h-4 text-[#2196F3]" /> One-Click Owner Access
-          </button>
         </form>
 
       </div>
