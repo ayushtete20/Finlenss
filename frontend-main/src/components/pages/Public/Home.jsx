@@ -10,7 +10,6 @@ const LATEST_LIMIT = 6;
 
 export const Home = ({ searchTerm, setSearchTerm }) => {
   const [articles, setArticles] = useState([]);
-  const [certMap, setCertMap] = useState({}); // articleId => certification object
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [categories, setCategories] = useState(['All']);
   const [loading, setLoading] = useState(true);
@@ -53,18 +52,6 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
   // Initial load
   useEffect(() => {
     loadCategories();
-
-    // Load certifications and build a map: articleId => cert
-    fetchCertifications().then(data => {
-      const certs = data.certifications || [];
-      const map = {};
-      certs.forEach(cert => {
-        if (cert.article_id) {
-          map[String(cert.article_id)] = cert;
-        }
-      });
-      setCertMap(map);
-    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -282,7 +269,7 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
         {!loading && !error && latestArticles.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {latestArticles.map((article) => (
-              <ClayCard key={article.id} article={article} linkedCert={certMap[String(article.id)] || null} />
+              <ClayCard key={article.id} article={article} />
             ))}
           </div>
         )}
