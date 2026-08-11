@@ -244,60 +244,55 @@ export const Post = () => {
         </div>
       )}
 
-      {/* Article Header with Background Picture Integration */}
-      <header className="text-white p-8 sm:p-12 rounded-2xl border border-[#90CAF9] shadow-xl space-y-6 relative overflow-hidden bg-[#0D47A1]">
-        {/* Background Cover Image with Gradient Overlay */}
-        {article.thumbnail_url && (
-          <>
-            <img
-              src={article.thumbnail_url}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
-            />
-            {/* Dark gradient overlay for crystal clear text readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A2540] via-[#0D47A1]/90 to-[#0A2540]/80 backdrop-blur-[1px] pointer-events-none" />
-          </>
+      {/* Article Header */}
+      <header className="bg-[#0D47A1] text-white p-8 sm:p-10 rounded-2xl border border-[#90CAF9] shadow-xl space-y-6">
+        <span className="px-3.5 py-1 text-xs font-extrabold rounded-md bg-[#2196F3] text-white uppercase tracking-widest inline-block shadow-sm">
+          {article.category}
+        </span>
+
+        <h1 className="text-xl sm:text-3xl font-extrabold text-white font-serif leading-tight">
+          {article.title}
+        </h1>
+
+        {article.excerpt && (
+          <p className="text-base sm:text-lg text-slate-100/90 leading-relaxed font-sans italic border-l-4 border-[#2196F3] pl-4 py-1">
+            "{article.excerpt}"
+          </p>
         )}
 
-        {/* Header Content */}
-        <div className="relative z-10 space-y-6">
-          <span className="px-3.5 py-1 text-xs font-extrabold rounded-md bg-[#2196F3] text-white uppercase tracking-widest inline-block shadow-sm">
-            {article.category}
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs font-semibold text-slate-200/80 pt-2 border-t border-[#90CAF9]/40 py-3">
+          <span className="flex items-center gap-1.5 text-white font-bold">
+            <User className="w-4 h-4 text-white" />
+            {article.author || 'Tushar Singh'}
           </span>
-
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-white font-serif leading-[1.2] drop-shadow-sm">
-            {article.title}
-          </h1>
-
-          {article.excerpt && (
-            <p className="text-base sm:text-lg text-slate-100 leading-relaxed font-sans italic border-l-4 border-[#2196F3] pl-4 py-1 drop-shadow-xs">
-              "{article.excerpt}"
-            </p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs font-semibold text-slate-100/90 pt-3 border-t border-white/20 py-2">
-            <span className="flex items-center gap-1.5 text-white font-bold">
-              <User className="w-4 h-4 text-white" />
-              {article.author || 'Tushar Singh'}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-slate-200" />
-              {new Date(article.created_at || Date.now()).toLocaleDateString()}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-slate-200" />
-              {article.read_time || '8 min read'}
-            </span>
-            <span className="flex items-center gap-1.5 text-white font-bold bg-[#2196F3]/50 px-2.5 py-1 rounded-md border border-white/30 shadow-xs backdrop-blur-xs">
-              <Eye className="w-4 h-4 text-white" />
-              {article.views || 0} {(article.views || 0) === 1 ? 'visit' : 'visits'}
-            </span>
-          </div>
+          <span className="flex items-center gap-1.5">
+            <Calendar className="w-4 h-4" />
+            {new Date(article.created_at || Date.now()).toLocaleDateString()}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Clock className="w-4 h-4" />
+            {article.read_time || '8 min read'}
+          </span>
+          <span className="flex items-center gap-1.5 text-white font-bold bg-[#2196F3]/40 px-2.5 py-1 rounded-md border border-white/20 shadow-xs">
+            <Eye className="w-4 h-4 text-white" />
+            {article.views || 0} {(article.views || 0) === 1 ? 'visit' : 'visits'}
+          </span>
         </div>
       </header>
+
+      {/* Featured Picture — Positioned between Header and Body */}
+      {article.thumbnail_url && (
+        <div className="rounded-2xl overflow-hidden border-2 border-[#90CAF9] shadow-xl max-h-[480px] bg-slate-900 relative">
+          <img
+            src={article.thumbnail_url}
+            alt={article.title}
+            className="w-full h-[280px] sm:h-[400px] md:h-[460px] object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
 
       {/* Main Article Body */}
       <div className="mint-card p-6 sm:p-10 space-y-6 text-[#0D47A1] leading-relaxed text-sm sm:text-base">
