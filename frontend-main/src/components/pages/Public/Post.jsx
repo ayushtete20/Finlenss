@@ -244,6 +244,20 @@ export const Post = () => {
         </div>
       )}
 
+      {/* Featured Cover Picture (if uploaded) */}
+      {article.thumbnail_url && (
+        <div className="rounded-2xl overflow-hidden border-2 border-[#90CAF9] shadow-xl max-h-[460px] bg-slate-900 relative">
+          <img
+            src={article.thumbnail_url}
+            alt={article.title}
+            className="w-full h-[260px] sm:h-[380px] md:h-[440px] object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
+
       {/* Article Header */}
       <header className="bg-[#0D47A1] text-white p-8 sm:p-10 rounded-2xl border border-[#90CAF9] shadow-xl space-y-6">
         <span className="px-3.5 py-1 text-xs font-extrabold rounded-md bg-[#2196F3] text-white uppercase tracking-widest inline-block shadow-sm">
@@ -285,6 +299,40 @@ export const Post = () => {
         {article.content.split('\n').map((paragraph, index) => {
           const trimmed = paragraph.trim();
           if (!trimmed) return null;
+
+          // In-Body Markdown Images: ![alt](url)
+          const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/);
+          if (imgMatch) {
+            const alt = imgMatch[1];
+            const src = imgMatch[2];
+            return (
+              <figure key={index} className="my-6 rounded-2xl overflow-hidden border border-[#90CAF9]/60 shadow-md bg-white p-2">
+                <img
+                  src={src}
+                  alt={alt || 'Article visual'}
+                  className="w-full max-h-[520px] object-contain rounded-xl"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80';
+                  }}
+                />
+                {alt && (
+                  <figcaption className="text-center text-xs text-[#0D47A1]/70 italic mt-2 font-sans">
+                    {alt}
+                  </figcaption>
+                )}
+              </figure>
+            );
+          }
+
+          // In-Body Captions: *caption*
+          if (trimmed.startsWith('*') && trimmed.endsWith('*') && !trimmed.startsWith('**') && trimmed.length > 2) {
+            return (
+              <p key={index} className="text-center text-xs text-[#0D47A1]/70 italic font-sans -mt-3 mb-4">
+                {trimmed.slice(1, -1)}
+              </p>
+            );
+          }
 
           if (trimmed.startsWith('# ')) {
             return (
