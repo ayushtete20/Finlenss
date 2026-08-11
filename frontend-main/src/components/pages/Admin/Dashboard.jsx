@@ -195,14 +195,8 @@ export const Dashboard = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Direct Supabase SDK select query
-      const { data: artData, error: artErr } = await supabase.from('articles').select('*').order('created_at', { ascending: false });
-      if (!artErr && artData && artData.length > 0) {
-        setArticles(artData);
-      } else {
-        const data = await fetchArticles();
-        setArticles(data.articles || []);
-      }
+      const data = await fetchArticles();
+      setArticles(data.articles || []);
 
       const siteStats = await fetchSiteStats();
       if (siteStats) {
