@@ -211,14 +211,23 @@ export const updateArticle = (req, res) => {
 export const deleteArticle = (req, res) => {
   const { id } = req.params;
 
-  db.run('DELETE FROM articles WHERE id = ?', [id], function (err) {
-    if (err) {
-      return res.status(500).json({ error: 'Failed to delete article', details: err.message });
-    }
-    if (this.changes === 0) {
-      return res.status(404).json({ error: 'Article not found' });
-    }
-    res.json({ message: 'Article deleted successfully' });
+  db.serialize(() => {
+    // 1. Delete associated comments
+    db.run('DELETE FROM comments WHERE article_id = ?', [id], () => {});
+    // 2. Unlink certifications
+    db.run('UPDATE certifications SET article_id = NULL WHERE article_id = ?', [id], () => {});
+    // 3. Unlink feedback
+    db.run('UPDATE feedback SET article_id = NULL WHERE article_id = ?', [id], () => {});
+    // 4. Delete article
+    db.run('DELETE FROM articles WHERE id = ?', [id], function (err) {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to delete article', details: err.message });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Article not found' });
+      }
+      res.json({ message: 'Article deleted successfully' });
+    });
   });
 };
 

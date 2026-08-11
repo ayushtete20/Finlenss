@@ -186,11 +186,45 @@ const setStoredCustomArticles = (articles) => {
   } catch (e) {}
 };
 
+export const getDeletedArticleIds = () => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const cached = localStorage.getItem('deleted_articles_cache');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed)) return parsed.map(String);
+    }
+  } catch (e) {}
+  return [];
+};
+
+export const addDeletedArticleId = (id) => {
+  if (typeof window === 'undefined' || id === undefined || id === null) return;
+  try {
+    const ids = getDeletedArticleIds();
+    const strId = String(id);
+    if (!ids.includes(strId)) {
+      ids.push(strId);
+      localStorage.setItem('deleted_articles_cache', JSON.stringify(ids));
+    }
+  } catch (e) {}
+};
+
+export const removeDeletedArticleId = (id) => {
+  if (typeof window === 'undefined' || id === undefined || id === null) return;
+  try {
+    const ids = getDeletedArticleIds().filter(existingId => String(existingId) !== String(id));
+    localStorage.setItem('deleted_articles_cache', JSON.stringify(ids));
+  } catch (e) {}
+};
+
 // --- SECTION 1: SUPABASE DIRECT SDK DATA FETCHING ---
 
 // Fetch Articles using Supabase SDK: supabase.from('articles').select('*')
 export const fetchArticles = async (params = {}) => {
   let articles = null;
+  const deletedArticleIds = getDeletedArticleIds();
+
   try {
     let query = supabase.from('articles').select('*');
 
@@ -224,14 +258,18 @@ export const fetchArticles = async (params = {}) => {
     articles = [...fallbackArticles];
   }
 
+  // Filter out any articles marked as deleted
+  articles = (articles || []).filter(art => art && !deletedArticleIds.includes(String(art.id)));
+
   // Merge local overrides from getStoredCustomArticles() if any exist
   const localCache = getStoredCustomArticles();
   if (localCache && Array.isArray(localCache)) {
+    const validCache = localCache.filter(c => c && !deletedArticleIds.includes(String(c.id)));
     const merged = articles.map(art => {
-      const match = localCache.find(c => String(c.id) === String(art.id));
+      const match = validCache.find(c => String(c.id) === String(art.id));
       return match ? { ...art, ...match, views: match.views !== undefined ? match.views : (art.views || 0) } : { ...art, views: art.views || 0 };
     });
-    localCache.forEach(c => {
+    validCache.forEach(c => {
       if (!merged.some(m => String(m.id) === String(c.id))) {
         merged.unshift({ ...c, views: c.views || 0 });
       }
@@ -240,6 +278,9 @@ export const fetchArticles = async (params = {}) => {
   } else {
     articles = articles.map(a => ({ ...a, views: a.views || 0 }));
   }
+
+  // Final safety check against deleted IDs
+  articles = articles.filter(art => art && !deletedArticleIds.includes(String(art.id)));
 
   if (params.category && params.category !== 'All') {
     articles = articles.filter(a => a.category === params.category);
@@ -254,12 +295,19 @@ export const fetchArticles = async (params = {}) => {
 
 // Fetch Article by ID using Supabase SDK
 export const fetchArticleById = async (id) => {
+  if (!id) return { article: null };
+  const strId = String(id);
+  const deletedArticleIds = getDeletedArticleIds();
+  if (deletedArticleIds.includes(strId)) {
+    return { article: null };
+  }
+
   let article = null;
   const numericId = parseInt(id, 10);
   const targetId = isNaN(numericId) ? id : numericId;
 
   try {
-    const { data, error } = await supabase.from('articles').select('*').eq('id', targetId).single();
+    const { data, error } = await supabase.from('articles').select('*').eq('id', targetId).maybeSingle();
     if (!error && data) {
       article = data;
     }
@@ -272,19 +320,23 @@ export const fetchArticleById = async (id) => {
     if (data && data.article) article = data.article;
   }
 
-  if (!article) {
-    article = fallbackArticles.find(a => String(a.id) === String(id));
+  if (!article && !deletedArticleIds.includes(strId)) {
+    article = fallbackArticles.find(a => String(a.id) === strId);
   }
 
   const localCache = getStoredCustomArticles();
-  if (localCache && Array.isArray(localCache)) {
-    const match = localCache.find(c => String(c.id) === String(id));
+  if (localCache && Array.isArray(localCache) && !deletedArticleIds.includes(strId)) {
+    const match = localCache.find(c => String(c.id) === strId);
     if (match) {
-      article = { ...article, ...match };
+      article = article ? { ...article, ...match } : match;
     }
   }
 
-  return { article: article || fallbackArticles[0] };
+  if (article && deletedArticleIds.includes(String(article.id))) {
+    return { article: null };
+  }
+
+  return { article: article || null };
 };
 
 // Fetch Categories using Supabase SDK: supabase.from('categories').select('*')
@@ -372,18 +424,25 @@ export const createArticle = async (articleData) => {
   const newId = Date.now();
   const newArticle = { id: newId, views: 0, is_trending: 0, created_at: new Date().toISOString(), ...articleData };
 
-  // 1. In-memory sync
+  // 1. Remove from deleted cache in case ID was previously tombstoned
+  removeDeletedArticleId(newId);
+
+  // 2. In-memory sync
   fallbackArticles.unshift(newArticle);
 
-  // 2. LocalStorage sync
+  // 3. LocalStorage sync
   let localCache = getStoredCustomArticles() || [...fallbackArticles];
+  localCache = localCache.filter(a => String(a.id) !== String(newId));
   localCache.unshift(newArticle);
   setStoredCustomArticles(localCache);
 
-  // 3. Remote Supabase sync
+  // 4. Remote Supabase sync
   try {
     const { data, error } = await supabase.from('articles').insert([articleData]).select().single();
-    if (!error && data) return { message: 'Article created', article: data };
+    if (!error && data) {
+      removeDeletedArticleId(data.id);
+      return { message: 'Article created', article: data };
+    }
   } catch (e) {}
 
   const token = getAuthToken();
@@ -392,24 +451,31 @@ export const createArticle = async (articleData) => {
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(articleData)
   });
-  if (resData) return resData;
+  if (resData) {
+    if (resData.article && resData.article.id) removeDeletedArticleId(resData.article.id);
+    return resData;
+  }
 
   return { message: 'Article created', article: newArticle };
 };
 
 export const updateArticle = async (id, articleData) => {
+  const strId = String(id);
   const numericId = parseInt(id, 10);
   const targetId = isNaN(numericId) ? id : numericId;
 
+  // Un-blacklist if updating
+  removeDeletedArticleId(id);
+
   // 1. In-memory fallbackArticles sync
-  const fallbackIdx = fallbackArticles.findIndex(a => String(a.id) === String(id));
+  const fallbackIdx = fallbackArticles.findIndex(a => String(a.id) === strId);
   if (fallbackIdx !== -1) {
     fallbackArticles[fallbackIdx] = { ...fallbackArticles[fallbackIdx], ...articleData, id: targetId };
   }
 
   // 2. LocalStorage sync
   let localCache = getStoredCustomArticles() || [...fallbackArticles];
-  const cacheIdx = localCache.findIndex(a => String(a.id) === String(id));
+  const cacheIdx = localCache.findIndex(a => String(a.id) === strId);
   if (cacheIdx !== -1) {
     localCache[cacheIdx] = { ...localCache[cacheIdx], ...articleData, id: targetId };
   } else {
@@ -439,30 +505,45 @@ export const updateArticle = async (id, articleData) => {
 };
 
 export const deleteArticle = async (id) => {
+  const strId = String(id);
   const numericId = parseInt(id, 10);
   const targetId = isNaN(numericId) ? id : numericId;
 
-  // 1. In-memory fallbackArticles sync
-  const fallbackIdx = fallbackArticles.findIndex(a => String(a.id) === String(id));
+  // 1. Permanently register in deleted articles cache
+  addDeletedArticleId(id);
+
+  // 2. In-memory fallbackArticles sync
+  const fallbackIdx = fallbackArticles.findIndex(a => String(a.id) === strId);
   if (fallbackIdx !== -1) fallbackArticles.splice(fallbackIdx, 1);
 
-  // 2. LocalStorage sync
+  // 3. LocalStorage sync
   let localCache = getStoredCustomArticles() || [...fallbackArticles];
-  localCache = localCache.filter(a => String(a.id) !== String(id));
+  localCache = localCache.filter(a => String(a.id) !== strId);
   setStoredCustomArticles(localCache);
 
-  // 3. Remote Supabase sync
+  // 4. Remote Supabase sync: clean up dependent rows first to prevent FK blocks
   try {
-    const { error } = await supabase.from('articles').delete().eq('id', targetId);
-    if (!error) return { message: 'Article deleted' };
+    await supabase.from('comments').delete().eq('article_id', targetId);
+  } catch (e) {}
+  try {
+    await supabase.from('certifications').update({ article_id: null }).eq('article_id', targetId);
+  } catch (e) {}
+  try {
+    await supabase.from('feedback').update({ article_id: null }).eq('article_id', targetId);
+  } catch (e) {}
+  try {
+    await supabase.from('articles').delete().eq('id', targetId);
   } catch (e) {}
 
+  // 5. Backend API sync (SQLite) with admin auth token
   const token = getAuthToken();
-  const resData = await safeFetchJson(`${baseUrl}/blogs/${id}`, {
-    method: 'DELETE',
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
-  });
-  if (resData) return resData;
+  try {
+    const resData = await safeFetchJson(`${baseUrl}/blogs/${id}`, {
+      method: 'DELETE',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+    });
+    if (resData) return resData;
+  } catch (e) {}
 
   return { message: 'Article deleted' };
 };

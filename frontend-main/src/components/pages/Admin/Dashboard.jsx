@@ -597,13 +597,15 @@ export const Dashboard = () => {
 
   const handleDelete = async (id) => {
     try {
+      setArticles(prev => prev.filter(art => String(art.id) !== String(id)));
+      setDeleteTarget(null);
       await deleteArticle(id);
       setNotification('Article deleted successfully!');
-      setDeleteTarget(null);
-      loadData();
+      await loadData();
       setTimeout(() => setNotification(null), 3000);
     } catch (err) {
-      alert('Failed to delete article: ' + err.message);
+      alert('Failed to delete article: ' + (err.message || err));
+      loadData();
     }
   };
 
