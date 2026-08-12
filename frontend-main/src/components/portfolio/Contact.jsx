@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, MapPin, Clock, Send, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
+import { logAudit } from '../../utils/AuditLogger';
 
 export const Contact = () => {
   const [submitted, setSubmitted] = useState(false);
@@ -15,11 +16,18 @@ export const Contact = () => {
     message: ''
   });
 
+  const handleTopicChange = (newTopic) => {
+    logAudit('CONSULTATION_DOMAIN_CHANGED', formData.topic, newTopic, { component: 'Contact' });
+    setFormData((prev) => ({ ...prev, topic: newTopic }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.email) return;
     setLoading(true);
     setErrorMessage(null);
+
+    logAudit('CONSULTATION_SUBMISSION_ATTEMPTED', null, { name: formData.name, email: formData.email, topic: formData.topic }, { component: 'Contact' });
 
     try {
       const { error } = await supabase.from('consultations').insert([{
@@ -38,6 +46,8 @@ export const Contact = () => {
         });
       }
 
+      logAudit('CONSULTATION_SUBMITTED_SUCCESSFULLY', null, { name: formData.name, topic: formData.topic }, { component: 'Contact' });
+
       setSubmitted(true);
       setFormData({ name: '', email: '', phone: '', topic: 'Financial Valuation', message: '' });
       setTimeout(() => {
@@ -45,6 +55,7 @@ export const Contact = () => {
       }, 6000);
     } catch (err) {
       console.error('Consultation submission error:', err);
+      logAudit('CONSULTATION_SUBMISSION_FAILED', null, { error: err.message }, { component: 'Contact' });
       setErrorMessage(err.message || 'Unable to submit advisory reservation.');
     } finally {
       setLoading(false);
@@ -217,7 +228,7 @@ export const Contact = () => {
                     </label>
                     <select
                       value={formData.topic}
-                      onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
+                      onChange={(e) => handleTopicChange(e.target.value)}
                       className="px-4 py-3 rounded-xl border border-[#BFDBFE] bg-white text-[#1E3A8A] focus:outline-none focus:border-[#2563EB] text-xs sm:text-sm font-sans w-full cursor-pointer"
                     >
                       <option value="Financial Valuation">Financial Modeling & Valuation</option>

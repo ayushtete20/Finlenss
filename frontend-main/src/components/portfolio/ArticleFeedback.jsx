@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Star, Send, CheckCircle2, Loader2, AlertCircle, MessageSquareHeart } from 'lucide-react';
 import { createFeedback } from '../../services/api';
+import { logAudit } from '../../utils/AuditLogger';
 
 export const ArticleFeedback = () => {
   const [rating, setRating] = useState(5);
@@ -21,6 +22,16 @@ export const ArticleFeedback = () => {
     5: 'Outstanding Research & Models!'
   };
 
+  const handleRatingSelect = (starVal) => {
+    if (starVal !== rating) {
+      logAudit('FEEDBACK_RATING_CHANGED', rating, starVal, {
+        component: 'ArticleFeedback',
+        description: ratingDescriptions[starVal]
+      });
+      setRating(starVal);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!suggestion.trim()) {
@@ -31,13 +42,17 @@ export const ArticleFeedback = () => {
     setLoading(true);
     setErrorMessage(null);
 
+    const feedbackPayload = {
+      rating,
+      suggestion: suggestion.trim(),
+      name: name.trim() || 'Anonymous Reader',
+      email: email.trim() || ''
+    };
+
     try {
-      await createFeedback({
-        rating,
-        suggestion: suggestion.trim(),
-        name: name.trim() || 'Anonymous Reader',
-        email: email.trim() || ''
-      });
+      logAudit('FEEDBACK_SUBMISSION_ATTEMPTED', null, feedbackPayload, { component: 'ArticleFeedback' });
+      await createFeedback(feedbackPayload);
+      logAudit('FEEDBACK_SUBMITTED_SUCCESSFULLY', null, { rating, name: feedbackPayload.name }, { component: 'ArticleFeedback' });
 
       setSubmitted(true);
       setSuggestion('');
@@ -48,6 +63,7 @@ export const ArticleFeedback = () => {
       }, 7000);
     } catch (err) {
       console.error('Feedback submission error:', err);
+      logAudit('FEEDBACK_SUBMISSION_FAILED', null, { error: err.message }, { component: 'ArticleFeedback' });
       setErrorMessage(err.message || 'Unable to submit feedback at this time.');
     } finally {
       setLoading(false);
@@ -122,7 +138,7 @@ export const ArticleFeedback = () => {
                       <button
                         key={starVal}
                         type="button"
-                        onClick={() => setRating(starVal)}
+                        onClick={() => handleRatingSelect(starVal)}
                         onMouseEnter={() => setHoverRating(starVal)}
                         onMouseLeave={() => setHoverRating(0)}
                         className="p-1.5 focus:outline-none transition-transform duration-150 hover:scale-125 cursor-pointer"

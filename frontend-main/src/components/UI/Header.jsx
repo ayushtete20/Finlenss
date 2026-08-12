@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { TrendingUp, ShieldCheck, LogOut, Menu, X, LayoutDashboard, Search } from 'lucide-react';
 import { isAdminLoggedIn, removeAuthToken } from '../../services/api';
+import { logAudit } from '../../utils/AuditLogger';
 
 export const Header = ({ onSearchChange, searchTerm }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -23,10 +24,17 @@ export const Header = ({ onSearchChange, searchTerm }) => {
   }, [location.pathname]);
 
   const handleLogout = () => {
+    logAudit('ADMIN_LOGGED_OUT', true, false, { component: 'Header' });
     removeAuthToken();
     setLoggedIn(false);
     setIsMobileMenuOpen(false);
     navigate('/');
+  };
+
+  const handleMobileMenuToggle = () => {
+    const nextState = !isMobileMenuOpen;
+    logAudit('MOBILE_NAV_TOGGLED', isMobileMenuOpen, nextState, { component: 'Header' });
+    setIsMobileMenuOpen(nextState);
   };
 
   const handleScrollToTopOrHome = (e) => {
@@ -125,7 +133,7 @@ export const Header = ({ onSearchChange, searchTerm }) => {
           {/* Mobile Drawer Button */}
           <div className="md:hidden flex items-center gap-2">
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={handleMobileMenuToggle}
               className="p-2 text-[#0D47A1]"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

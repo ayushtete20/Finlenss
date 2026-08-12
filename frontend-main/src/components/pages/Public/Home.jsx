@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchArticles, fetchCategories, fetchCertifications } from '../../../services/api';
 import { supabase } from '../../../utils/supabaseClient';
+import { logAudit } from '../../../utils/AuditLogger';
 import ClayCard from '../../UI/ClayCard';
 import Portfolio from '../../portfolio/Portfolio';
 import { TrendingUp, RefreshCw, AlertCircle, Sparkles, Zap, Eye } from 'lucide-react';
@@ -21,6 +22,13 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
   useEffect(() => {
     paramsRef.current = { category: selectedCategory, search: searchTerm };
   }, [selectedCategory, searchTerm]);
+
+  const handleCategorySelect = (cat) => {
+    if (selectedCategory !== cat) {
+      logAudit('CATEGORY_FILTER_CHANGED', selectedCategory, cat, { component: 'Home' });
+      setSelectedCategory(cat);
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -66,6 +74,7 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'articles' },
         () => {
+          logAudit('REALTIME_ARTICLES_SYNC', null, 'TRIGGERED', { component: 'Home', table: 'articles' });
           // Flash "Live Updated" badge
           setLiveUpdate(true);
           setTimeout(() => setLiveUpdate(false), 3000);
@@ -236,7 +245,7 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
               return (
                 <button
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => handleCategorySelect(cat)}
                   className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded border transition-all ${
                     active
                       ? 'bg-[#0D47A1] text-white border-[#0D47A1] shadow-sm'

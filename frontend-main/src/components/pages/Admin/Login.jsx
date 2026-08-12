@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { loginAdmin } from '../../../services/api';
 import { Lock, Eye, EyeOff, ShieldCheck, KeyRound, AlertCircle, ArrowLeft } from 'lucide-react';
 import ClayButton from '../../UI/ClayButton';
+import { logAudit } from '../../../utils/AuditLogger';
 
 export const Login = () => {
   const [password, setPassword] = useState('');
@@ -20,15 +21,19 @@ export const Login = () => {
 
     setLoading(true);
     setError(null);
+    logAudit('ADMIN_LOGIN_ATTEMPTED', false, 'PENDING', { component: 'Login' });
 
     try {
       const res = await loginAdmin(password);
       if (res.success) {
+        logAudit('ADMIN_LOGIN_SUCCESS', false, true, { component: 'Login' });
         navigate('/admin/dashboard');
       } else {
+        logAudit('ADMIN_LOGIN_FAILED', false, false, { component: 'Login', reason: res.error });
         setError(res.error || 'Authentication failed.');
       }
     } catch (err) {
+      logAudit('ADMIN_LOGIN_FAILED', false, false, { component: 'Login', reason: err.message });
       setError(err.message || 'Invalid admin password provided.');
     } finally {
       setLoading(false);

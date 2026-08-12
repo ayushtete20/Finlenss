@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, TrendingUp, ShieldCheck, FileText } from 'lucide-react';
+import { logAudit } from '../../utils/AuditLogger';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -56,7 +57,12 @@ export const SolutionsAccordion = () => {
   ];
 
   const toggleAccordion = (idx) => {
-    setOpenIndex(openIndex === idx ? null : idx);
+    const nextIndex = openIndex === idx ? null : idx;
+    logAudit('ACCORDION_TOGGLED', openIndex, nextIndex, {
+      component: 'SolutionsAccordion',
+      solutionTitle: nextIndex !== null ? solutions[nextIndex]?.title : 'None (Collapsed)'
+    });
+    setOpenIndex(nextIndex);
   };
 
   return (

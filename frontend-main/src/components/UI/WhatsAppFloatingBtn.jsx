@@ -1,14 +1,26 @@
 import React, { useState } from 'react';
+import { logAudit } from '../../utils/AuditLogger';
 
 export const WhatsAppFloatingBtn = () => {
   const [isHovered, setIsHovered] = useState(false);
   const whatsappUrl = "https://chat.whatsapp.com/K146aYYHkqLF7rAwEUNA1Y?s=cl&p=i&mlu=0&ilr=0";
 
+  const handleHoverChange = (newState) => {
+    if (newState !== isHovered) {
+      logAudit('WHATSAPP_WIDGET_HOVER', isHovered, newState, { component: 'WhatsAppFloatingBtn' });
+      setIsHovered(newState);
+    }
+  };
+
+  const handleWhatsAppClick = () => {
+    logAudit('WHATSAPP_LINK_CLICKED', null, whatsappUrl, { component: 'WhatsAppFloatingBtn' });
+  };
+
   return (
     <div 
       className="fixed bottom-6 right-6 z-50 flex flex-col items-end group select-none"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => handleHoverChange(true)}
+      onMouseLeave={() => handleHoverChange(false)}
     >
       {/* Floating Hover Card / Tooltip Box */}
       <div 
@@ -49,6 +61,7 @@ export const WhatsAppFloatingBtn = () => {
           <div className="flex flex-col gap-2">
             <a
               href={whatsappUrl}
+              onClick={handleWhatsAppClick}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full py-2.5 px-3 bg-[#25D366] hover:bg-[#1ebd5b] active:bg-[#128C7E] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all duration-200"
