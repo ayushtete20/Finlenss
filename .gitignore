@@ -48,7 +48,7 @@ backend/*.sqlite-journal
 *.sqlite
 
 # ========================================
-# Editor / OS Files
+# Editor / OS Files & Personal Artifacts
 # ========================================
 .vscode/*
 !.vscode/extensions.json
@@ -59,9 +59,33 @@ backend/*.sqlite-journal
 *.njsproj
 *.sln
 *.sw?
+
+# Installers & Executables
+*.msi
+*.exe
+*.dmg
+*.pkg
+
+# Personal documents, PDFs, & Raw screenshots in root
+*.pdf
 Screenshot*.png
 *.png.bak
+*.jpeg
+*.jpg
+!frontend-main/public/**/*
+!frontend-portfolio/public/**/*
+!frontend-main/src/**/*
+!frontend-portfolio/src/**/*
+
+# Temporary data files & notes
 *tabase.txt
 *.txt.bak
+url.txt
+*.csv
+!backend/csv_exports/*.csv
+*.xlsx
+!frontend-main/public/*.xlsx
+!frontend-portfolio/public/*.xlsx
 
-
+# Scratch audits & notes
+Portfolio Production Readiness Audit.md
