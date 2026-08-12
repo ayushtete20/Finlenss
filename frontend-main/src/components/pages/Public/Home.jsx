@@ -150,8 +150,26 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
               </div>
             </div>
           ) : (
-            <div className="bg-[#0D47A1] text-white p-12 text-center rounded-2xl">
-              Loading featured selection...
+            <div className="bg-[#0D47A1]/95 text-white border border-[#90CAF9] shadow-xl rounded-2xl p-8 sm:p-12 relative overflow-hidden flex flex-col justify-between min-h-[460px] animate-pulse">
+              <div className="space-y-5">
+                <div className="w-36 h-6 bg-white/20 rounded-md"></div>
+                <div className="space-y-3">
+                  <div className="w-full h-8 bg-white/20 rounded-lg"></div>
+                  <div className="w-3/4 h-8 bg-white/20 rounded-lg"></div>
+                </div>
+                <div className="space-y-2 pt-2">
+                  <div className="w-full h-4 bg-white/10 rounded"></div>
+                  <div className="w-5/6 h-4 bg-white/10 rounded"></div>
+                  <div className="w-2/3 h-4 bg-white/10 rounded"></div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 pt-6 border-t border-[#90CAF9]/40">
+                <div className="w-10 h-10 rounded-full bg-white/20"></div>
+                <div className="space-y-2">
+                  <div className="w-28 h-3.5 bg-white/20 rounded"></div>
+                  <div className="w-44 h-2.5 bg-white/15 rounded"></div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -259,11 +277,33 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
           </div>
         </div>
 
-        {/* Loading State */}
+        {/* Loading State - Skeleton Grid */}
         {loading && (
-          <div className="py-20 text-center space-y-3">
-            <RefreshCw className="w-8 h-8 text-navy-900 animate-spin mx-auto" />
-            <p className="text-xs font-bold text-navy-900/60 uppercase tracking-wider">Fetching live insights...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((idx) => (
+              <div
+                key={idx}
+                className="bg-white/80 border border-[#90CAF9]/60 rounded-2xl p-6 sm:p-7 shadow-sm space-y-4 animate-pulse"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-20 h-5 bg-[#E3F2FD] rounded"></div>
+                  <div className="w-16 h-4 bg-slate-100 rounded"></div>
+                </div>
+                <div className="space-y-2 pt-1">
+                  <div className="w-full h-6 bg-slate-200/80 rounded-md"></div>
+                  <div className="w-3/4 h-6 bg-slate-200/80 rounded-md"></div>
+                </div>
+                <div className="space-y-1.5 pt-2">
+                  <div className="w-full h-3.5 bg-slate-100 rounded"></div>
+                  <div className="w-5/6 h-3.5 bg-slate-100 rounded"></div>
+                  <div className="w-2/3 h-3.5 bg-slate-100 rounded"></div>
+                </div>
+                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                  <div className="w-24 h-4 bg-slate-200/70 rounded"></div>
+                  <div className="w-16 h-4 bg-[#E3F2FD] rounded"></div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

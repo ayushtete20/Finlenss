@@ -38,6 +38,21 @@ export const Post = () => {
   const [linkedCert, setLinkedCert] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  // Scroll Progress Listener for Institutional Reader
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (totalHeight > 0) {
+        const current = (window.scrollY / totalHeight) * 100;
+        setScrollProgress(Math.min(100, Math.max(0, current)));
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Engagement state
   const [likesCount, setLikesCount] = useState(0);
@@ -218,6 +233,14 @@ export const Post = () => {
 
   return (
     <article className="max-w-4xl mx-auto space-y-8 py-4">
+      {/* Sticky Top Reading Progress Bar */}
+      <div className="fixed top-0 left-0 right-0 h-1 z-[60] bg-slate-200/40">
+        <div
+          className="h-full bg-gradient-to-r from-[#0D47A1] via-[#2196F3] to-[#00E5FF] transition-all duration-75 ease-out shadow-sm"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
+
       {/* Top Bar Navigation */}
       <div className="flex items-center justify-between">
         <Link to="/">
