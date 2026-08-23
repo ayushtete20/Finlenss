@@ -33,7 +33,8 @@ export default function FinancialBackground() {
     // Initialize Candlesticks across 3 Depth Layers
     function initCandles() {
       candles = [];
-      const totalCandles = Math.floor(width / 38); 
+      const isMobile = width < 768;
+      const totalCandles = Math.floor(width / (isMobile ? 55 : 38)); 
 
       for (let i = 0; i < totalCandles; i++) {
         const x = (i + 0.5) * (width / totalCandles);
@@ -61,7 +62,8 @@ export default function FinancialBackground() {
       }
 
       numbers = [];
-      for (let j = 0; j < 12; j++) {
+      const numCount = isMobile ? 4 : 10;
+      for (let j = 0; j < numCount; j++) {
         spawnNumber();
       }
     }
@@ -112,6 +114,11 @@ export default function FinancialBackground() {
 
     // Main Render Loop
     const render = () => {
+      if (document.hidden) {
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
+
       // Background base light blue fill
       ctx.fillStyle = '#EAF2F8';
       ctx.fillRect(0, 0, width, height);
@@ -151,11 +158,8 @@ export default function FinancialBackground() {
         const low = bottom + c.lowOffset;
 
         let alpha = c.layer === 1 ? 0.25 : c.layer === 2 ? 0.55 : 0.85;
-        let blur = c.layer === 1 ? 3 : c.layer === 2 ? 1 : 0;
 
         ctx.save();
-        if (blur > 0) ctx.filter = `blur(${blur}px)`;
-
         const colorPalette = c.isBullish ? CANDLE_COLORS_BULL : CANDLE_COLORS_BEAR;
         const mainColor = colorPalette[c.layer - 1];
 
@@ -170,11 +174,6 @@ export default function FinancialBackground() {
         ctx.fillStyle = mainColor;
         ctx.globalAlpha = alpha;
         
-        if (c.layer === 3) {
-          ctx.shadowColor = mainColor;
-          ctx.shadowBlur = 8;
-        }
-
         ctx.fillRect(c.x - c.width / 2, top, c.width, Math.max(3, bottom - top));
         ctx.restore();
       });

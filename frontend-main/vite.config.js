@@ -8,6 +8,8 @@ export default defineConfig({
     host: true
   },
   build: {
+    target: 'es2020',
+    cssCodeSplit: true,
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {

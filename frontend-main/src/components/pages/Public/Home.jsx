@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchArticles, fetchCategories, fetchCertifications } from '../../../services/api';
 import { supabase } from '../../../utils/supabaseClient';
 import { logAudit } from '../../../utils/AuditLogger';
 import ClayCard from '../../UI/ClayCard';
-import Portfolio from '../../portfolio/Portfolio';
 import { TrendingUp, RefreshCw, AlertCircle, Sparkles, Zap, Eye } from 'lucide-react';
+
+const Portfolio = lazy(() => import('../../portfolio/Portfolio'));
 
 const LATEST_LIMIT = 6;
 
@@ -334,7 +335,14 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
 
       {/* Portfolio Section */}
       <section id="portfolio" className="pt-8">
-        <Portfolio />
+        <Suspense fallback={
+          <div className="py-16 text-center">
+            <div className="w-8 h-8 border-3 border-[#0D47A1] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <span className="text-xs font-bold uppercase tracking-widest text-[#0D47A1]/70">Loading Portfolio...</span>
+          </div>
+        }>
+          <Portfolio />
+        </Suspense>
       </section>
     </div>
   );

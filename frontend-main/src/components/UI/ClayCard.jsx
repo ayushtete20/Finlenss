@@ -11,8 +11,12 @@ export const ClayCard = ({ article }) => {
       {thumbnail_url ? (
         <div className="relative w-full h-44 overflow-hidden bg-slate-900 shrink-0">
           <img
-            src={thumbnail_url}
+            src={thumbnail_url.includes('unsplash.com') ? thumbnail_url.replace(/&w=\d+/, '&w=600').replace(/&q=\d+/, '&q=75') : thumbnail_url}
             alt={title}
+            loading="lazy"
+            decoding="async"
+            width="600"
+            height="340"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             onError={(e) => {
               e.target.style.display = 'none';
