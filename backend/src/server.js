@@ -12,6 +12,7 @@ import collaborationRoutes from './routes/collaborationRoutes.js';
 import feedbackRoutes from './routes/feedbackRoutes.js';
 import certificationRoutes from './routes/certificationRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import sitemapRoutes from './routes/sitemapRoutes.js';
 
 dotenv.config();
 
@@ -73,6 +74,8 @@ app.use('/api', collaborationRoutes);
 app.use('/api', feedbackRoutes);
 app.use('/api', certificationRoutes);
 app.use('/api', uploadRoutes);
+app.use('/api', sitemapRoutes);
+app.use('/', sitemapRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
