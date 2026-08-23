@@ -1,0 +1,25 @@
+{
+  "name": "financial-blog-platform",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm --prefix frontend-main run dev",
+    "dev:portfolio": "npm --prefix frontend-portfolio run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix frontend-main run build",
+    "build:portfolio": "npm --prefix frontend-portfolio run build",
+    "sitemap": "node generate_sitemap.js",
+    "start": "node backend/src/server.js"
+  },
+  "keywords": [
+    "fintech",
+    "financial-blog",
+    "valuation-models",
+    "cfa",
+    "seo",
+    "sitemap"
+  ],
+  "author": "Tushar Singh",
+  "license": "ISC"
+}

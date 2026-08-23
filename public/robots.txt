@@ -1,0 +1,20 @@
+# Finlenss Production Robots.txt
+# https://finlenss.com
+
+User-agent: *
+Allow: /
+Allow: /post/
+Allow: /about
+Allow: /certifications
+Allow: /skills
+Allow: /experience-education
+Allow: /contact
+
+# Disallow private and administrative portals
+Disallow: /admin/
+Disallow: /admin
+Disallow: /api/
+
+# Sitemaps
+Sitemap: https://finlenss.com/sitemap.xml
+Sitemap: https://finlenss-portfolio-aayush-6845.vercel.app/sitemap.xml
