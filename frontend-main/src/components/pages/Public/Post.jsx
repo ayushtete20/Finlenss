@@ -9,6 +9,7 @@ import {
   createComment,
   likeArticle
 } from '../../../services/api';
+import { supabase } from '../../../utils/supabaseClient';
 import {
   ArrowLeft,
   Clock,
@@ -111,6 +112,25 @@ export const Post = () => {
 
     loadPost();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [id]);
+
+  // Real-time synchronization for reader comments and admin deletions
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`post-comments-${id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'comments' },
+        () => {
+          loadCommentsData(id);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id]);
 
   const loadCommentsData = async (articleId) => {
