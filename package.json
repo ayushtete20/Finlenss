@@ -10,6 +10,7 @@
     "build": "npm --prefix frontend-main run build",
     "build:portfolio": "npm --prefix frontend-portfolio run build",
     "sitemap": "node generate_sitemap.js",
+    "check:backlinks": "node scripts/check-backlinks.js",
     "start": "node backend/src/server.js"
   },
   "keywords": [

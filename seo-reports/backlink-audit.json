@@ -1,0 +1,13 @@
+{
+  "targetDomain": "finlenss.com",
+  "searchQuery": "\"finlenss.com\" -site:finlenss.com",
+  "timestamp": "2026-08-24T00:44:20.739Z",
+  "metrics": {
+    "totalMentions": 0,
+    "uniqueReferringDomains": 0,
+    "directBacklinks": 0,
+    "textMentions": 0
+  },
+  "referringDomains": [],
+  "results": []
+}
