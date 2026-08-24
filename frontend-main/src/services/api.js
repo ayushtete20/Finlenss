@@ -16,19 +16,83 @@ const safeFetchJson = async (url, options = {}) => {
   return null;
 };
 
-// --- FALLBACK INITIAL SEED DATA FOR PRODUCTION ---
+// Automatically clean legacy corrupt local cache from browser on load
+if (typeof window !== 'undefined') {
+  try {
+    const cacheVersion = localStorage.getItem('finlenss_cache_v2');
+    if (!cacheVersion) {
+      localStorage.removeItem('custom_articles_cache');
+      localStorage.removeItem('deleted_articles_cache');
+      localStorage.setItem('finlenss_cache_v2', 'true');
+    }
+  } catch (e) {}
+}
+
+// --- FALLBACK INITIAL SEED DATA FOR PRODUCTION (EXACT MIRROR OF SUPABASE) ---
 export const fallbackArticles = [
   {
     id: 1,
+    title: 'Why India’s Next Growth Story May Not Be About GDP Alone.',
+    excerpt: 'An in-depth structural macroeconomic analysis of India\'s infrastructure, capital goods, and domestic manufacturing supercycle beyond baseline GDP indicators.',
+    category: 'Macroeconomics',
+    thumbnail_url: 'https://qgoctcpqebkrieqjwntz.supabase.co/storage/v1/object/public/article-images/india_growth_infrastructure_1787581363678.jpg',
+    author: 'Tushar Singh',
+    read_time: '15 min',
+    views: 5,
+    is_trending: 0,
+    created_at: '2026-08-08T14:00:19.000Z',
+    content: `Why India’s Next Growth Story May Not Be About GDP Alone\n\nIndia's capital expenditure surge, infrastructure expansion, and manufacturing PLI schemes are redefining domestic asset productivity and long-term equity valuations.`
+  },
+  {
+    id: 2,
+    title: 'Global Macro Analysis Q3 2026: Interest Rate Pivots & Inflation Control',
+    excerpt: 'An in-depth breakdown of global central bank shifts, yield curve inversions, and institutional asset allocation strategies in the evolving macroeconomic landscape.',
+    category: 'Macroeconomics',
+    thumbnail_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80',
+    author: 'Tushar Singh',
+    read_time: '7 min read',
+    views: 1000,
+    is_trending: 0,
+    created_at: '2026-07-31T10:58:12.000Z',
+    content: `Global macro conditions in 2026 are defined by shifting central bank policies, yield curve realignments, and strategic capital reallocation toward resilient cash-flow-generating assets.`
+  },
+  {
+    id: 3,
+    title: 'Building Tax-Efficient Wealth: A Guide to High Net Worth Asset Location',
+    excerpt: 'Optimizing returns by strategically distributing growth equities, bonds, and real estate assets across taxable, tax-deferred, and tax-exempt accounts.',
+    category: 'Wealth Management',
+    thumbnail_url: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1000&q=80',
+    author: 'Sophia Chen',
+    read_time: '8 min read',
+    views: 2159,
+    is_trending: 0,
+    created_at: '2026-07-31T10:58:12.000Z',
+    content: `Maximizing net investment income is not merely a matter of security selection; it requires precise asset location strategy across taxable and tax-advantaged vehicles.`
+  },
+  {
+    id: 4,
+    title: 'Quantitative Valuation Models for High-Growth SaaS Companies',
+    excerpt: 'Exploring Rule of 40, Net Revenue Retention (NRR), and DCF multi-stage growth models tailored for enterprise SaaS valuation.',
+    category: 'SaaS & Tech',
+    thumbnail_url: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1000&q=80',
+    author: 'Tushar Singh',
+    read_time: '6 min read',
+    views: 3114,
+    is_trending: 0,
+    created_at: '2026-07-31T10:58:12.000Z',
+    content: `SaaS valuation requires rigorous quantitative modeling incorporating Rule of 40 performance metrics, customer acquisition cost payback, and Net Revenue Retention rates.`
+  },
+  {
+    id: 5,
     title: 'Equity Valuation & Financial Modelling — Dabur India 3-Statement Model',
     excerpt: 'Completed a 3-Statement Financial Model of Dabur India, integrating the Income Statement, Balance Sheet, and Cash Flow Statement to forecast the company\'s financial performance.',
     category: 'Financial Valuation',
     thumbnail_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1000&q=80',
-    author: 'Tushar Singh, CFA',
+    author: 'Tushar Singh',
     read_time: '5 min read',
-    views: 0,
+    views: 1902,
     is_trending: 1,
-    created_at: new Date().toISOString(),
+    created_at: '2026-08-05T06:28:11.000Z',
     content: `Completed a 3-Statement Financial Model of Dabur India, integrating the Income Statement, Balance Sheet, and Cash Flow Statement to forecast the company's financial performance.
 
 Key Insights:
@@ -41,45 +105,6 @@ Key Insights:
 • Debt levels remain manageable, indicating a strong and stable financial position.
 • The integrated model ensures that every financial statement is linked, maintaining balance sheet integrity and accurate cash flow forecasting.
 • Sensitivity to revenue growth and operating margins highlights the importance of key forecasting assumptions.`
-  },
-  {
-    id: 2,
-    title: 'Global Macro Analysis Q3 2026: Interest Rate Pivots & Inflation Control',
-    excerpt: 'An in-depth breakdown of global central bank shifts, yield curve inversions, and institutional asset allocation strategies in the evolving macroeconomic landscape.',
-    category: 'Macroeconomics',
-    thumbnail_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1000&q=80',
-    author: 'Tushar Singh, CFA',
-    read_time: '7 min read',
-    views: 0,
-    is_trending: 1,
-    created_at: new Date().toISOString(),
-    content: `Global macro conditions in 2026 are defined by shifting central bank policies, yield curve realignments, and strategic capital reallocation toward resilient cash-flow-generating assets.`
-  },
-  {
-    id: 3,
-    title: 'Decentralized Credit Protocols: Institutional Liquidity in DeFi 3.0',
-    excerpt: 'How under-collateralized lending and real-world asset (RWA) tokenization are bridging traditional private credit with decentralized liquidity pools.',
-    category: 'DeFi 3.0',
-    thumbnail_url: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=1000&q=80',
-    author: 'Tushar Singh',
-    read_time: '9 min read',
-    views: 0,
-    is_trending: 0,
-    created_at: new Date().toISOString(),
-    content: `Real-World Asset (RWA) tokenization is revolutionizing private credit markets, allowing institutional investors to tap into transparent, automated DeFi liquidity pools.`
-  },
-  {
-    id: 4,
-    title: 'Quantitative Valuation Models for High-Growth SaaS Companies',
-    excerpt: 'Exploring Rule of 40, Net Revenue Retention (NRR), and DCF multi-stage growth models tailored for enterprise SaaS valuation.',
-    category: 'SaaS & Tech',
-    thumbnail_url: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1000&q=80',
-    author: 'Tushar Singh',
-    read_time: '6 min read',
-    views: 0,
-    is_trending: 1,
-    created_at: new Date().toISOString(),
-    content: `SaaS valuation requires rigorous quantitative modeling incorporating Rule of 40 performance metrics, customer acquisition cost payback, and Net Revenue Retention rates.`
   }
 ];
 
@@ -99,7 +124,7 @@ export const fallbackCertifications = [
     issuer: 'Caplexus Capital',
     dates: 'Issued Jul 2026 – Expires Jul 2030',
     icon: 'Award',
-    article_id: 1,
+    article_id: 5,
     article_title: 'Equity Valuation & Financial Modelling — Dabur India 3-Statement Model',
     article_content: `Completed a 3-Statement Financial Model of Dabur India, integrating the Income Statement, Balance Sheet, and Cash Flow Statement to forecast the company's financial performance.`,
     insights: [
@@ -239,48 +264,44 @@ export const fetchArticles = async (params = {}) => {
 
     if (!error && data && data.length > 0) {
       articles = data;
+      // Keep local cache synced with live Supabase database
+      setStoredCustomArticles(data);
     }
   } catch (err) {
     console.warn('Supabase fetchArticles error, using local fallback:', err);
   }
 
+  // If Supabase query failed, try backend Express API
   if (!articles) {
     try {
       const query = new URLSearchParams();
       if (params.category && params.category !== 'All') query.append('category', params.category);
       if (params.search) query.append('search', params.search);
       const data = await safeFetchJson(`${baseUrl}/blogs?${query.toString()}`);
-      if (data && data.articles) articles = data.articles;
+      if (data && data.articles && data.articles.length > 0) {
+        articles = data.articles;
+        setStoredCustomArticles(articles);
+      }
     } catch (e) {}
   }
 
+  // ONLY if both Supabase and Backend API failed (offline mode), fallback to local cache
   if (!articles) {
-    articles = [...fallbackArticles];
+    const localCache = getStoredCustomArticles();
+    if (localCache && Array.isArray(localCache) && localCache.length > 0) {
+      articles = localCache;
+    } else {
+      articles = [...fallbackArticles];
+    }
   }
 
   // Filter out any articles marked as deleted
   articles = (articles || []).filter(art => art && !deletedArticleIds.includes(String(art.id)));
-
-  // Merge local overrides from getStoredCustomArticles() if any exist
-  const localCache = getStoredCustomArticles();
-  if (localCache && Array.isArray(localCache)) {
-    const validCache = localCache.filter(c => c && !deletedArticleIds.includes(String(c.id)));
-    const merged = articles.map(art => {
-      const match = validCache.find(c => String(c.id) === String(art.id));
-      return match ? { ...art, ...match, views: match.views !== undefined ? match.views : (art.views || 0) } : { ...art, views: art.views || 0 };
-    });
-    validCache.forEach(c => {
-      if (!merged.some(m => String(m.id) === String(c.id))) {
-        merged.unshift({ ...c, views: c.views || 0 });
-      }
-    });
-    articles = merged;
-  } else {
-    articles = articles.map(a => ({ ...a, views: a.views || 0 }));
-  }
-
-  // Final safety check against deleted IDs
-  articles = articles.filter(art => art && !deletedArticleIds.includes(String(art.id)));
+  articles = articles.map(a => ({
+    ...a,
+    views: parseInt(a.views || 0, 10) || 0,
+    likes: parseInt(a.likes || 0, 10) || 0
+  }));
 
   if (params.category && params.category !== 'All') {
     articles = articles.filter(a => a.category === params.category);
@@ -320,15 +341,15 @@ export const fetchArticleById = async (id) => {
     if (data && data.article) article = data.article;
   }
 
+  // Only check local cache / fallback articles if remote database returned nothing
   if (!article && !deletedArticleIds.includes(strId)) {
-    article = fallbackArticles.find(a => String(a.id) === strId);
-  }
-
-  const localCache = getStoredCustomArticles();
-  if (localCache && Array.isArray(localCache) && !deletedArticleIds.includes(strId)) {
-    const match = localCache.find(c => String(c.id) === strId);
-    if (match) {
-      article = article ? { ...article, ...match } : match;
+    const localCache = getStoredCustomArticles();
+    if (localCache && Array.isArray(localCache)) {
+      const match = localCache.find(c => String(c.id) === strId);
+      if (match) article = match;
+    }
+    if (!article) {
+      article = fallbackArticles.find(a => String(a.id) === strId);
     }
   }
 

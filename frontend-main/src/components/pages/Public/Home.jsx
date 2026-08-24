@@ -92,10 +92,15 @@ export const Home = ({ searchTerm, setSearchTerm }) => {
 
   // Sort articles for trending sidebar: owner-pinned first, then highest views
   const sortedByTrending = [...articles].sort((a, b) => {
-    if ((b.is_trending || 0) !== (a.is_trending || 0)) {
-      return (b.is_trending || 0) - (a.is_trending || 0);
+    const isTrendingA = parseInt(a.is_trending, 10) || 0;
+    const isTrendingB = parseInt(b.is_trending, 10) || 0;
+    const viewsA = parseInt(a.views, 10) || 0;
+    const viewsB = parseInt(b.views, 10) || 0;
+
+    if (isTrendingB !== isTrendingA) {
+      return isTrendingB - isTrendingA;
     }
-    return (b.views || 0) - (a.views || 0);
+    return viewsB - viewsA;
   });
 
   const featuredArticle = articles.length > 0 ? articles[0] : null;

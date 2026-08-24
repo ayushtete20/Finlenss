@@ -68,6 +68,7 @@ backend/*.sqlite-journal
 
 # Personal documents, PDFs, & Raw screenshots in root
 *.pdf
+*.mp4
 Screenshot*.png
 *.png.bak
 *.jpeg

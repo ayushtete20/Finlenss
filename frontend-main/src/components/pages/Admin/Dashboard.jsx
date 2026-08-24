@@ -676,8 +676,8 @@ export const Dashboard = () => {
   };
 
   // Aggregated Stats
-  const totalViews = (articles || []).reduce((acc, curr) => acc + (curr?.views || 0), 0);
-  const totalLikes = (articles || []).reduce((acc, curr) => acc + (curr?.likes || 0), 0);
+  const totalViews = (articles || []).reduce((acc, curr) => acc + (parseInt(curr?.views, 10) || 0), 0);
+  const totalLikes = (articles || []).reduce((acc, curr) => acc + (parseInt(curr?.likes, 10) || 0), 0);
   const categoriesCount = (categoriesList || []).length || new Set((articles || []).map(a => a?.category)).size;
   const pendingCollabsCount = (collaborations || []).filter(c => c?.status === 'Pending').length;
 
@@ -1065,7 +1065,7 @@ export const Dashboard = () => {
                           {/* Live Like Count */}
                           <td className="py-3.5 px-4 text-center font-bold text-rose-600">
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200">
-                              <Heart className="w-3 h-3 fill-rose-500 text-rose-500" /> {article.likes || 0}
+                              <Heart className="w-3 h-3 fill-rose-500 text-rose-500" /> {parseInt(article.likes, 10) || 0}
                             </span>
                           </td>
                           {/* Total Comment Count */}
