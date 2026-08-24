@@ -93,6 +93,17 @@ export const Post = () => {
             const relatedData = await fetchArticles({ category: liveArticle.category });
             setRelated((relatedData.articles || []).filter(a => a.id !== parseInt(id)).slice(0, 3));
           }
+
+          // Dynamically update SEO metadata for Googlebot and Search Console URL Inspection
+          document.title = `${liveArticle.title} — Finlenss`;
+          const metaDesc = document.querySelector('meta[name="description"]');
+          if (metaDesc && liveArticle.excerpt) {
+            metaDesc.setAttribute('content', liveArticle.excerpt);
+          }
+          const canonicalLink = document.querySelector('link[rel="canonical"]');
+          if (canonicalLink) {
+            canonicalLink.setAttribute('href', `https://finlenss.com/post/${id}`);
+          }
         } else {
           setError('Article not found.');
         }
@@ -112,6 +123,12 @@ export const Post = () => {
 
     loadPost();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    return () => {
+      document.title = 'Finlenss. — Financial Insights & Market Intelligence';
+      const canonicalLink = document.querySelector('link[rel="canonical"]');
+      if (canonicalLink) canonicalLink.setAttribute('href', 'https://finlenss.com/');
+    };
   }, [id]);
 
   // Real-time synchronization for reader comments and admin deletions
